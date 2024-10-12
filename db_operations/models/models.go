@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -24,14 +25,14 @@ type App struct {
 }
 
 type User struct {
-	ID           int       `db:"id"`
-	FullName     string    `db:"full_name"`
-	PhoneNumber  string    `db:"phone_number"`
-	Email        string    `db:"email"`
-	TwoFactorKey []byte    `db:"two_factor_key"`
-	CreationDate time.Time `db:"creation_date"`
-	Password     string    `db:"password"`
-	Metadata     *[]byte   `db:"metadata"`
+	ID           int             `db:"id"`
+	FullName     string          `db:"full_name"`
+	PhoneNumber  string          `db:"phone_number"`
+	Email        string          `db:"email"`
+	TwoFactorKey []byte          `db:"two_factor_key"`
+	CreationDate time.Time       `db:"creation_date"`
+	Password     string          `db:"password"`
+	Metadata     json.RawMessage `db:"metadata"`
 }
 
 type APIToken struct {

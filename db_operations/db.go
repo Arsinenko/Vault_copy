@@ -2,6 +2,7 @@ package db_operations
 
 import (
 	"Vault_copy/db_operations/models"
+	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -25,7 +26,7 @@ func DB_connection() (*gorm.DB, error) {
 	return db, nil
 }
 
-func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte) {
+func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte, Metadata json.RawMessage) {
 	currentTime := time.Now()
 	var user = models.User{
 		FullName:     fullname,
@@ -34,7 +35,7 @@ func CreateUser(db *gorm.DB, fullname string, phone string, email string, passwo
 		Password:     password,
 		CreationDate: currentTime,
 		TwoFactorKey: TwoFactorKey,
-		Metadata:     nil,
+		Metadata:     Metadata,
 	}
 	db.Create(&user)
 }
