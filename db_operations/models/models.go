@@ -31,7 +31,7 @@ type User struct {
 	TwoFactorKey []byte    `db:"two_factor_key"`
 	CreationDate time.Time `db:"creation_date"`
 	Password     string    `db:"password"`
-	Metadata     []byte    `db:"metadata"`
+	Metadata     *[]byte   `db:"metadata"`
 }
 
 type APIToken struct {

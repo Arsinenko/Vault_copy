@@ -25,7 +25,7 @@ func DB_connection() (*gorm.DB, error) {
 	return db, nil
 }
 
-func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte, Metadata []byte) {
+func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte) {
 	currentTime := time.Now()
 	var user = models.User{
 		FullName:     fullname,
@@ -34,7 +34,7 @@ func CreateUser(db *gorm.DB, fullname string, phone string, email string, passwo
 		Password:     password,
 		CreationDate: currentTime,
 		TwoFactorKey: TwoFactorKey,
-		Metadata:     Metadata,
+		Metadata:     nil,
 	}
 	db.Create(&user)
 }
