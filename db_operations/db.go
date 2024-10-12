@@ -34,9 +34,10 @@ func DB_connection() (*gorm.DB, error) {
 
 func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte, Metadata json.RawMessage) {
 	currentTime := time.Now()
-	salt1 := cryptoOperation.GenerateSalt(16)
-	salt2 := cryptoOperation.GenerateSalt(16)
-	passwd := cryptoOperation.HashPassword(password, salt1, salt2)
+	passwd, err := cryptoOperation.RegisterUser(password)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	var user = models.User{
 		FullName:     fullname,

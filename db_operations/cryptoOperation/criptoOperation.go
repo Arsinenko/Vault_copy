@@ -27,7 +27,7 @@ func HashPassword(password string, salt1, salt2 []byte) []byte {
 }
 
 // Функция для регистрации пользователя
-func registerUser(password string) (string, error) {
+func RegisterUser(password string) (string, error) {
 	// Генерация двух солей
 	salt1 := GenerateSalt(16)
 
