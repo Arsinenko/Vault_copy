@@ -23,6 +23,8 @@ func DB_connection() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.LogMode(true) // Включает логирование SQL-запросов
+
 	db.AutoMigrate(&models.User{})
 	return db, nil
 }
