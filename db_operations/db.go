@@ -39,4 +39,5 @@ func CreateUser(db *gorm.DB, fullname string, phone string, email string, passwo
 		Metadata:     Metadata,
 	}
 	db.Create(&user)
+	fmt.Printf("Created user: %v\n", user)
 }
