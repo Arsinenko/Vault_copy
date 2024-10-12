@@ -1,6 +1,7 @@
 package db_operations
 
 import (
+	"Vault_copy/db_operations/cryptoOperation"
 	"Vault_copy/db_operations/models"
 	"encoding/json"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"strings"
 )
 
 func DB_connection() (*gorm.DB, error) {
@@ -32,11 +34,15 @@ func DB_connection() (*gorm.DB, error) {
 
 func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte, Metadata json.RawMessage) {
 	currentTime := time.Now()
+	salt1 := cryptoOperation.GenerateSalt(16)
+	salt2 := cryptoOperation.GenerateSalt(16)
+	passwd := cryptoOperation.HashPassword(password, salt1, salt2)
+
 	var user = models.User{
 		FullName:     fullname,
 		PhoneNumber:  phone,
 		Email:        email,
-		Password:     password,
+		Password:     string(passwd),
 		CreationDate: currentTime,
 		TwoFactorKey: TwoFactorKey,
 		Metadata:     Metadata,
@@ -47,4 +53,25 @@ func CreateUser(db *gorm.DB, fullname string, phone string, email string, passwo
 		return
 	}
 	fmt.Printf("Created user: %v\n", user)
+}
+
+func Auth(db *gorm.DB, identifier string, password byte) {
+	if strings.Contains(identifier, "@") {
+		var user models.User
+		result := db.Model(&models.User{}).Where("email = ? AND password = ?", identifier, string(password)).First(&user)
+		if result.RowsAffected == 1 {
+			fmt.Printf("Found user: %v\n", user)
+			//var token = db.Model(&models.securePassword{}).Where("token = ?", identifier).First(&user)
+		}
+		fmt.Printf("securePassword does not exist: %v\n", user)
+		return
+	}
+	var user models.User
+	result := db.Model(&models.User{}).Where("phone = ? AND password = ?", identifier, string(password)).First(&user)
+	if result.RowsAffected == 1 {
+		fmt.Printf("Found user: %v\n", user)
+		return
+	}
+	fmt.Printf("securePassword does not exist: %v\n", user)
+	return
 }

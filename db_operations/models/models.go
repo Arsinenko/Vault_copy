@@ -49,7 +49,6 @@ type APIToken struct {
 }
 
 type AuditLog struct {
-	ID        int       `db:"id"`
 	Action    int16     `db:"action"`
 	UserID    int64     `db:"user_id"`
 	AppID     int64     `db:"app_id"`
