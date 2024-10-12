@@ -30,13 +30,8 @@ func HashPassword(password string, salt1, salt2 []byte) []byte {
 func registerUser(password string) (string, error) {
 	// Генерация двух солей
 	salt1 := GenerateSalt(16)
-	if err != nil {
-		return "", err
-	}
+
 	salt2 := GenerateSalt(16)
-	if err != nil {
-		return "", err
-	}
 
 	// Хешируем пароль
 	passHash := HashPassword(password, salt1, salt2)
