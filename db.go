@@ -1,36 +1,53 @@
 package main
 
-// база данных postgresql
 import (
-	"database/sql"
 	"fmt"
+	"log"
+
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-type Entites struct {
-	Id   int
-	Name string
-	Age  int
+// DBConfig представляет собой конфигурацию подключения к базе данных
+type DBConfig struct {
+	Host     string
+	Port     string
+	Username string
+	Password string
+	DBName   string
 }
 
-func Connect() {
-	var db, err = sql.Open("postgres", "user=postgres dbname=postgres sslmode=disable")
-	if err != nil {
-		panic(err)
+// NewDBConfig возвращает новую конфигурацию подключения к базе данных
+func NewDBConfig(host, port, username, password, dbName string) *DBConfig {
+	return &DBConfig{
+		Host:     host,
+		Port:     port,
+		Username: username,
+		Password: password,
+		DBName:   dbName,
 	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-	}(db)
-	err = db.Ping()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("Successfully connected!")
 }
+
+// ConnectDB подключается к базе данных с использованием предоставленной конфигурации
+func ConnectDB(cfg *DBConfig) (*sqlx.DB, error) {
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName)
+
+	db, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
 func main() {
-	Connect()
+	cfg := NewDBConfig("localhost", "5432", "username", "password", "dbname")
+	db, err := ConnectDB(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// Используйте подключение к базе данных
 }
