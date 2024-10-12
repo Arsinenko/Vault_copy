@@ -2,6 +2,7 @@ package main
 
 import (
 	"Vault_copy/db_operations"
+	"encoding/json"
 	"fmt"
 )
 
@@ -12,8 +13,8 @@ func main() {
 		return
 	}
 
-	db_operations.CreateUser(db, "TestUser", "+79123456789", "test@mail.com", "testpass", nil, nil)
-	db.Commit()
+	db_operations.CreateUser(db, "TestUser", "+79123456789", "test@mail.com", "testpass", nil, json.RawMessage("{}"))
+	//db.Commit()
 	err = db.Close()
 	if err != nil {
 		return

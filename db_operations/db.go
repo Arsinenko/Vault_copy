@@ -4,15 +4,16 @@ import (
 	"Vault_copy/db_operations/models"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"time"
 )
 
 func DB_connection() (*gorm.DB, error) {
-	username := "your_username"
-	password := "your_password"
-	dbName := "your_database"
+	username := "vault"
+	password := "test12344444"
+	dbName := "vault"
 	host := "localhost"
 	port := 5432
 
