@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -25,6 +26,7 @@ type App struct {
 }
 
 type User struct {
+	gorm.Model
 	ID           int             `db:"id"`
 	FullName     string          `db:"full_name"`
 	PhoneNumber  string          `db:"phone_number"`
@@ -33,6 +35,10 @@ type User struct {
 	CreationDate time.Time       `db:"creation_date"`
 	Password     string          `db:"password"`
 	Metadata     json.RawMessage `db:"metadata"`
+}
+
+func (User) TableName() string {
+	return "user"
 }
 
 type APIToken struct {

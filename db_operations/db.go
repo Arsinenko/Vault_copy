@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"time"
 )
 
@@ -22,7 +23,7 @@ func DB_connection() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	db.AutoMigrate(&models.User{})
 	return db, nil
 }
 
