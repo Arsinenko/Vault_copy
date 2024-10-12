@@ -38,6 +38,10 @@ func CreateUser(db *gorm.DB, fullname string, phone string, email string, passwo
 		TwoFactorKey: TwoFactorKey,
 		Metadata:     Metadata,
 	}
-	db.Create(&user)
+
+	if err := db.Create(&user).Error; err != nil {
+		fmt.Printf("Error creating user: %v\n", err)
+		return
+	}
 	fmt.Printf("Created user: %v\n", user)
 }
