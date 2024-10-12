@@ -6,6 +6,7 @@ import (
 
 type Secret struct {
 	ID           int       `db:"id"`
+	SID          string    `db:"sid"`
 	Data         []byte    `db:"data"`
 	AppID        int64     `db:"app_id"`
 	CreationDate time.Time `db:"creation_date"`

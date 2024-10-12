@@ -1,19 +1,9 @@
 package main
 
-import (
-	"crypto/sha256"
-)
-
-func encryption(data []byte) []byte {
-	// Создайте новый объект хеша SHA256
-	hash := sha256.New()
-	hash.Write(data)
-	hashValue := hash.Sum(nil)
-	return hashValue
-}
-
+import "Vault_copy/db_operations"
 
 func main() {
-	hashValue :=
+	db_operations.DB_connection()
+	//db_operations.CreateUser()
 
 }

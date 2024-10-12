@@ -1,39 +1,23 @@
-package main
+package db_operations
 
 import (
+	"Vault_copy/db_operations/models"
 	"fmt"
-	"log"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/jinzhu/gorm"
+	"time"
 )
 
-// DBConfig представляет собой конфигурацию подключения к базе данных
-type DBConfig struct {
-	Host     string
-	Port     string
-	Username string
-	Password string
-	DBName   string
-}
+func DB_connection() (*gorm.DB, error) {
+	username := "your_username"
+	password := "your_password"
+	dbName := "your_database"
+	host := "localhost"
+	port := 5432
 
-// NewDBConfig возвращает новую конфигурацию подключения к базе данных
-func NewDBConfig(host, port, username, password, dbName string) *DBConfig {
-	return &DBConfig{
-		Host:     host,
-		Port:     port,
-		Username: username,
-		Password: password,
-		DBName:   dbName,
-	}
-}
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, username, password, dbName)
 
-// ConnectDB подключается к базе данных с использованием предоставленной конфигурации
-func ConnectDB(cfg *DBConfig) (*sqlx.DB, error) {
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.DBName)
-
-	db, err := sqlx.Connect("postgres", connStr)
+	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -41,13 +25,16 @@ func ConnectDB(cfg *DBConfig) (*sqlx.DB, error) {
 	return db, nil
 }
 
-func main() {
-	cfg := NewDBConfig("localhost", "5432", "username", "password", "dbname")
-	db, err := ConnectDB(cfg)
-	if err != nil {
-		log.Fatal(err)
+func CreateUser(db *gorm.DB, fullname string, phone string, email string, password string, TwoFactorKey []byte, Metadata []byte) {
+	currentTime := time.Now()
+	var user = models.User{
+		FullName:     fullname,
+		PhoneNumber:  phone,
+		Email:        email,
+		Password:     password,
+		CreationDate: currentTime,
+		TwoFactorKey: TwoFactorKey,
+		Metadata:     Metadata,
 	}
-	defer db.Close()
-
-	// Используйте подключение к базе данных
+	db.Create(&user)
 }
