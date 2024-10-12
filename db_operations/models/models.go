@@ -6,22 +6,22 @@ import (
 )
 
 type Secret struct {
-	ID           int       `db:"id"`
-	SID          string    `db:"sid"`
-	Data         []byte    `db:"data"`
-	AppID        int64     `db:"app_id"`
-	CreationDate time.Time `db:"creation_date"`
-	Metadata     []byte    `db:"metadata"`
+	ID           int             `db:"id"`
+	SID          string          `db:"sid"`
+	Data         []byte          `db:"data"`
+	AppID        int64           `db:"app_id"`
+	CreationDate time.Time       `db:"creation_date"`
+	Metadata     json.RawMessage `db:"metadata"`
 }
 
 type App struct {
-	ID           int       `db:"id"`
-	Name         string    `db:"name"`
-	Description  string    `db:"description"`
-	OwnerID      int64     `db:"owner_id"`
-	CreationDate time.Time `db:"creation_date"`
-	Metadata     []byte    `db:"metadata"`
-	APIPath      string    `db:"api_path"`
+	ID           int             `db:"id"`
+	Name         string          `db:"name"`
+	Description  string          `db:"description"`
+	OwnerID      int64           `db:"owner_id"`
+	CreationDate time.Time       `db:"creation_date"`
+	Metadata     json.RawMessage `db:"metadata"`
+	APIPath      string          `db:"api_path"`
 }
 
 type User struct {
@@ -53,17 +53,17 @@ type AuditLog struct {
 }
 
 type Cert struct {
-	ID           int       `db:"id"`
-	Public       []byte    `db:"public"`
-	Private      []byte    `db:"private"`
-	CreationDate time.Time `db:"creation_date"`
-	AppID        int64     `db:"app_id"`
-	Metadata     []byte    `db:"metadata"`
+	ID           int             `db:"id"`
+	Public       []byte          `db:"public"`
+	Private      []byte          `db:"private"`
+	CreationDate time.Time       `db:"creation_date"`
+	AppID        int64           `db:"app_id"`
+	Metadata     json.RawMessage `db:"metadata"`
 }
 
 type Policy struct {
-	AppID    int64  `db:"app_id"`
-	UserID   int64  `db:"user_id"`
-	Rules    []byte `db:"rules"`
-	Metadata []byte `db:"metadata"`
+	AppID    int             `db:"app_id"`
+	UserID   int64           `db:"user_id"`
+	Rules    json.RawMessage `db:"rules"`
+	Metadata json.RawMessage `db:"metadata"`
 }
