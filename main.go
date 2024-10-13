@@ -1,22 +1,13 @@
 package main
 
 import (
-	"Vault_copy/db_operations"
-	"encoding/json"
-	"fmt"
+	service_user "Vault_copy/services/user"
 )
 
 func main() {
-	db, err := db_operations.DB_connection()
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	res1 := service_user.CreateUser("+79775509028", "12345678", "Viktor");
+  println(res1)
 
-	db_operations.CreateUser(db, "TestUser", "+79123456789", "test@mail.com", "testpass", nil, json.RawMessage("{}"))
-	//db.Commit()
-	err = db.Close()
-	if err != nil {
-		return
-	}
+  res2 := service_user.AuthStandart("+79775509028", "12345678");
+  println(res2)
 }
