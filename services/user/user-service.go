@@ -108,6 +108,18 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 
 	// TODO: 1. Check password and phone/mail legit. 2. Check pass length
 
+	if len(password) < 8 {
+		return http.StatusBadRequest
+	}
+
+	if len(full_name) < 3 {
+		return http.StatusBadRequest
+	}
+
+	if len(phone_mail) < 3 {
+		return http.StatusBadRequest
+	}
+
 	db, e := db_operations.InitDB()
 	if e != nil {
 		panic(e)
