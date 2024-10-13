@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// TODO: Complete events
 const (
 	EventAuth int16 = iota + 1
 	EventRegister
