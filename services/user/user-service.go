@@ -15,6 +15,8 @@ import (
 )
 
 // import "C"
+
+// enum Event
 const (
 	EventAuth int16 = iota + 1
 	EventRegister
@@ -112,12 +114,11 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 		return http.StatusBadRequest
 	}
 
-	if len(full_name) < 3 {
-		return http.StatusBadRequest
-	}
-
 	if len(phone_mail) < 3 {
 		return http.StatusBadRequest
+	}
+	if strings.Contains(phone_mail, "@") || strings.Contains(phone_mail, "+") {
+		return http.StatusConflict
 	}
 
 	db, e := db_operations.InitDB()
