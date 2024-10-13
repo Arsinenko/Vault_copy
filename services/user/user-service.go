@@ -10,37 +10,18 @@ import (
 	"time"
 	"unsafe"
 
+	"Vault_copy/AuditLog"
 	"github.com/gotranspile/runtimec/libc"
 	"github.com/jackc/pgx/pgtype"
 )
 
 // import "C"
 
-// enum Event
-const (
-	EventAuth int16 = iota + 1
-	EventRegister
-)
-
-// audit_log
-func CreateAuditLog(action int16, idUser int32) {
-	//actions register: 1, auth: 2
-	db, err := db_operations.InitDB()
-	if err != nil {
-		panic(err)
-	}
-	var auditLog models.AuditLog
-	auditLog.Action = action
-	auditLog.UserID = idUser
-	auditLog.Date = time.Now()
-	db.Create(&auditLog)
-}
-
-func pass_hash(pass string, salt_1 []byte, salt_2 []byte) []byte {
+func passHash(pass string, salt1 []byte, salt2 []byte) []byte {
 	passb := []byte(pass)
-	s := salt_1[:]
+	s := salt1[:]
 	s = append(s, passb[:]...)
-	s = append(s, salt_2[:]...)
+	s = append(s, salt2[:]...)
 	return cryptoOperation.SHA256(s)
 }
 func pass_cmpP(hash_1 []byte, hash_2 []byte) int {
@@ -87,11 +68,11 @@ func AuthStandart(phone_mail string, password string) int {
 		panic(err_s2)
 	}
 
-	rn_hash := pass_hash(password, usr_salt1, usr_salt2)
+	rn_hash := passHash(password, usr_salt1, usr_salt2)
 	auth_ok := pass_cmpP(usr_hash, rn_hash) == 0
 
 	if auth_ok {
-		CreateAuditLog(EventAuth, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventAuth, user.ID)
 		return http.StatusOK
 
 	} else {
@@ -130,7 +111,7 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 
 	var salt_1 = cryptoOperation.SALT(16)
 	var salt_2 = cryptoOperation.SALT(16)
-	var hash = pass_hash(password, salt_1, salt_2)
+	var hash = passHash(password, salt_1, salt_2)
 
 	var s = salt_1[:]
 	s = append(s, hash[:]...)
@@ -151,7 +132,7 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	}
 
 	db.Create(user)
-	CreateAuditLog(EventRegister, user.ID)
+	AuditLog.CreateAuditLog(AuditLog.EventRegister, user.ID)
 
 	return http.StatusOK
 }
