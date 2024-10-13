@@ -14,7 +14,7 @@ const (
 
 // audit_log
 func CreateAuditLog(action int16, idUser int32) {
-	//actions register: 1, auth: 2
+
 	db, err := db_operations.InitDB()
 	if err != nil {
 		panic(err)
