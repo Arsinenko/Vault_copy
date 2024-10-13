@@ -98,9 +98,6 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	if len(phone_mail) < 3 {
 		return http.StatusBadRequest
 	}
-	if strings.Contains(phone_mail, "@") || strings.Contains(phone_mail, "+") {
-		return http.StatusConflict
-	}
 
 	db, e := db_operations.InitDB()
 	if e != nil {
