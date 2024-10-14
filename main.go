@@ -5,9 +5,9 @@ import (
 )
 
 func main() {
-	res1 := service_user.CreateUser("+79775509028", "12345678", "Viktor");
-  println(res1)
+	res1 := service_user.CreateUser("+79775509028", "12345678", "Viktor")
+	println(res1)
 
-  res2 := service_user.AuthStandart("+79775509028", "12345678");
-  println(res2)
+	res2 := service_user.AuthStandard("+79775509028", "12345678")
+	println(res2)
 }

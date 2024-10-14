@@ -49,7 +49,7 @@ func get_usr(phone_mail string) (models.User, error) {
 	return user, nil
 }
 
-func AuthStandart(phone_mail string, password string) int {
+func AuthStandard(phone_mail string, password string) int {
 	user, err := get_usr(phone_mail)
 	if err != nil {
 		return http.StatusNotFound
