@@ -57,19 +57,19 @@ func AuthStandard(phone_mail string, password string) int {
 
 	usr_salt1, err_s1 := hex.DecodeString(user.Password[:32])
 	if err_s1 != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID, 0, "")
 		panic(err_s1)
 	}
 
 	usr_hash, err_h := hex.DecodeString(user.Password[32:96])
 	if err_h != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventDecodePasswdError, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventDecodePasswdError, user.ID, 0, "")
 		panic(err_h)
 	}
 
 	usr_salt2, err_s2 := hex.DecodeString(user.Password[96:])
 	if err_s2 != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID, 0, "")
 		panic(err_s2)
 	}
 
@@ -77,11 +77,11 @@ func AuthStandard(phone_mail string, password string) int {
 	auth_ok := pass_cmpP(usr_hash, rn_hash) == 0
 
 	if auth_ok {
-		AuditLog.CreateAuditLog(AuditLog.EventAuth, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventAuth, user.ID, 0, "")
 		return http.StatusOK
 
 	} else {
-		AuditLog.CreateAuditLog(AuditLog.EventUnauthorized, user.ID)
+		AuditLog.CreateAuditLog(AuditLog.EventUnauthorized, user.ID, 0, "")
 		return http.StatusUnauthorized
 	}
 }
@@ -135,8 +135,46 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	}
 
 	db.Create(user)
-	AuditLog.CreateAuditLog(AuditLog.EventRegister, user.ID)
+	AuditLog.CreateAuditLog(AuditLog.EventRegister, user.ID, 0, "")
 
+	return http.StatusOK
+}
+
+func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.JSONB, APIPath string) int {
+	db, e := db_operations.InitDB()
+	if e != nil {
+		panic(e)
+	}
+	var app models.App
+	app.Name = Name
+	app.Description = Description
+	app.OwnerID = OwnerID
+	app.Metadata = metadata
+	app.APIPath = APIPath
+	app.CreationDate = time.Now()
+
+	AuditLog.CreateAuditLog(AuditLog.EventCreateApp, app.OwnerID, app.ID, "")
+	db.Create(app)
+
+	return http.StatusOK
+
+}
+
+func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int {
+	db, err := db_operations.InitDB()
+	if err != nil {
+		panic(err)
+	}
+
+	var secret models.Secret
+	secret.SID = SID
+	secret.Data = Data
+	secret.AppID = AppID
+	secret.CreationDate = time.Now()
+	secret.Metadata = Metadata
+
+	AuditLog.CreateAuditLog(AuditLog.EventCreateSecret, secret.ID, secret.AppID, "")
+	db.Create(secret)
 	return http.StatusOK
 }
 
