@@ -163,7 +163,6 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 	db.Create(app)
 
 	return http.StatusOK
-
 }
 
 func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int {
