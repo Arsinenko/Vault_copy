@@ -10,6 +10,8 @@ import (
 const (
 	EventAuth int16 = iota + 1
 	EventRegister
+	EventSaltError
+	EventUnauthorized
 )
 
 // audit_log

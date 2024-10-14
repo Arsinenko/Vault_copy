@@ -57,14 +57,18 @@ func AuthStandart(phone_mail string, password string) int {
 
 	usr_salt1, err_s1 := hex.DecodeString(user.Password[:32])
 	if err_s1 != nil {
+		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID)
 		panic(err_s1)
 	}
+
 	usr_hash, err_h := hex.DecodeString(user.Password[32:96])
 	if err_h != nil {
 		panic(err_h)
 	}
+
 	usr_salt2, err_s2 := hex.DecodeString(user.Password[96:])
 	if err_s2 != nil {
+		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID)
 		panic(err_s2)
 	}
 
@@ -76,6 +80,7 @@ func AuthStandart(phone_mail string, password string) int {
 		return http.StatusOK
 
 	} else {
+		AuditLog.CreateAuditLog(AuditLog.EventUnauthorized, user.ID)
 		return http.StatusUnauthorized
 	}
 }
