@@ -61,19 +61,19 @@ func AuthStandard(phone_mail string, password string) int {
 
 	usr_salt1, err_s1 := hex.DecodeString(user.Password[:32])
 	if err_s1 != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_salt1)")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt1)", _log_hash)
 		panic(err_s1)
 	}
 
 	usr_hash, err_h := hex.DecodeString(user.Password[32:96])
 	if err_h != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_hash)")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_hash)", _log_hash)
 		panic(err_h)
 	}
 
 	usr_salt2, err_s2 := hex.DecodeString(user.Password[96:])
 	if err_s2 != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_salt2)")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt2)", _log_hash)
 		panic(err_s2)
 	}
 
@@ -152,17 +152,21 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 
 	db, e := db_operations.InitDB()
 	if e != nil {
-		panic(e)
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[CreateApp]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
 	}
 	var app models.App
 	app.Name = Name
 	app.Description = Description
 	app.OwnerID = OwnerID
 	app.Metadata = metadata
-	app.APIPath = "" // TODO generate from name: " " -> "_", lowercase
+	app.APIPath = strings.ToLower(strings.ReplaceAll(Name, " ", "_"))
 	app.CreationDate = time.Now()
-	db.Create(app) // TODO -- handle error
-
+	err := db.Create(&app).Error
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorCreateApp, LogService.TErrorCreateApp, "[CreateApp]::db.Create(&app)", _log_hash)
+		return http.StatusInternalServerError
+	}
 	LogService.PushAuditLog(LogService.EventCreateApp, app.OwnerID, app.ID, 0, _log_hash)
 
 	return http.StatusOK

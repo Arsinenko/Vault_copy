@@ -11,12 +11,16 @@ const (
 	ErrorGeneral int16 = iota + 1
 	ErrorDatabase
 	ErrorHexDecode
+	ErrorDBInit
+	ErrorCreateApp
 )
 
-const TErrorHexDecode = "Error decode from hex"
+const TErrorHexDecode = "Error decode from hex";
+const TErrorDBInit = "Failed to initialize database connection";
+const TErrorCreateApp = "Failed to create app";
 
 // audit_log
-func Push_server_log(type_l int16, msg string, stack string) {
+func Push_server_log(type_l int16, msg string, stack string, hash string) {
 	db, err := db_operations.InitDB()
 	if err != nil {
 		panic(err)
