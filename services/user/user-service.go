@@ -52,7 +52,7 @@ func get_usr(phone_mail string) (models.User, error) {
 
 func AuthStandard(phone_mail string, password string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password)));
-	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, _log_hash);
+	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, 0, _log_hash);
 
 	user, err := get_usr(phone_mail)
 	if err != nil {
@@ -81,17 +81,17 @@ func AuthStandard(phone_mail string, password string) int {
 	auth_ok := pass_cmpP(usr_hash, rn_hash) == 0
 
 	if auth_ok {
-		LogService.PushAuditLog(LogService.EventAuth, user.ID, 0, _log_hash)
+		LogService.PushAuditLog(LogService.EventAuth, user.ID, 0, 0, _log_hash)
 		return http.StatusOK
 	} else {
-		LogService.PushAuditLog(LogService.EventUnauthorized, user.ID, 0, _log_hash)
+		LogService.PushAuditLog(LogService.EventUnauthorized, user.ID, 0, 0, _log_hash)
 		return http.StatusUnauthorized
 	}
 }
 
 func CreateUser(phone_mail string, password string, full_name string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password + full_name)));
-	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, _log_hash);
+	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, 0, _log_hash);
 
 	act_usr, err := get_usr(phone_mail)
 	if err == nil {
@@ -141,12 +141,15 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	}
 
 	db.Create(user)
-	LogService.PushAuditLog(LogService.EventRegister, user.ID, 0, _log_hash)
+	LogService.PushAuditLog(LogService.EventRegister, user.ID, 0, 0, _log_hash)
 
 	return http.StatusOK
 }
 
-func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.JSONB, APIPath string) int {
+func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.JSONB) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256(append([]byte(Name + Description + string(OwnerID)), metadata.Bytes...)));
+	LogService.PushAuditLog(LogService.EventTryCreateApp, OwnerID, 0, 0, _log_hash);
+
 	db, e := db_operations.InitDB()
 	if e != nil {
 		panic(e)
@@ -156,19 +159,22 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 	app.Description = Description
 	app.OwnerID = OwnerID
 	app.Metadata = metadata
-	app.APIPath = APIPath
+	app.APIPath = "" // TODO generate from name: " " -> "_", lowercase
 	app.CreationDate = time.Now()
+	db.Create(app) // TODO -- handle error
 
-	LogService.PushAuditLog(LogService.EventCreateApp, app.OwnerID, app.ID, "")
-	db.Create(app)
+	LogService.PushAuditLog(LogService.EventCreateApp, app.OwnerID, app.ID, 0, _log_hash)
 
 	return http.StatusOK
 }
 
-func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int {
+func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int { // SID, ya hz ne pomny zachem eto)))))
+	_log_hash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(SID+string(AppID)), Data...)), Metadata.Bytes...));
+	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, _log_hash);
+
 	db, err := db_operations.InitDB()
 	if err != nil {
-		panic(err)
+		panic(err) // TODO -- use server_log
 	}
 
 	var secret models.Secret
@@ -177,9 +183,9 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 	secret.AppID = AppID
 	secret.CreationDate = time.Now()
 	secret.Metadata = Metadata
+	db.Create(secret) // TODO -- handle error
 
-	LogService.PushAuditLog(LogService.EventCreateSecret, secret.ID, secret.AppID, "")
-	db.Create(secret)
+	LogService.PushAuditLog(LogService.EventCreateSecret, 0, secret.AppID, secret.ID, _log_hash)
 	return http.StatusOK
 }
 

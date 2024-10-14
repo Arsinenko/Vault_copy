@@ -10,17 +10,23 @@ import (
 const (
 	EventAuth int16 = iota + 1
 	EventTryAuth
+
 	EventRegister
 	EventTryRegister
+	
 	EventSaltError
 	EventDecodePasswdError
 	EventUnauthorized
+
 	EventCreateApp
+	EventTryCreateApp
+
 	EventCreateSecret
+	EventTryCreateSecret
 )
 
 // audit_log
-func PushAuditLog(action int16, idUser int32, AppId int32, hash string) {
+func PushAuditLog(action int16, idUser int32, AppId int32, SecretID int64, hash string) {
 	db, err := db_operations.InitDB()
 	if err != nil {
 		panic(err)
@@ -30,6 +36,7 @@ func PushAuditLog(action int16, idUser int32, AppId int32, hash string) {
 	auditLog.Action = action
 	auditLog.UserID = idUser
 	auditLog.Date = time.Now()
+	auditLog.SecretID = SecretID
 	auditLog.AppID = AppId
 	auditLog.TokenHash = hash
 

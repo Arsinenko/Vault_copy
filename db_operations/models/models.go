@@ -7,7 +7,7 @@ import (
 )
 
 type Secret struct {
-	ID           int32           		`db:"id"`
+	ID           int64           		`db:"id"`
 	SID          string          		`db:"sid"`
 	Data         []byte          		`db:"data"`
 	AppID        int32           		`db:"app_id"`
