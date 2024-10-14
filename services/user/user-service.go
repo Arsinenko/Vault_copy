@@ -63,6 +63,7 @@ func AuthStandart(phone_mail string, password string) int {
 
 	usr_hash, err_h := hex.DecodeString(user.Password[32:96])
 	if err_h != nil {
+		AuditLog.CreateAuditLog(AuditLog.EventDecodePasswdError, user.ID)
 		panic(err_h)
 	}
 
