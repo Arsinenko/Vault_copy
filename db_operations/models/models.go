@@ -90,3 +90,14 @@ type Policy struct {
 func (Policy) TableName() string {
 	return "policy"
 }
+
+type ServerLog struct {
+	ID			 int64					     		`db:"id"`
+	MSG	     string                 `db:"msg"`
+	Type     int16               		`db:"type"`
+	Stack    string                 `db:"stack"`
+	Date     time.Time  				 		`db:"date"`
+}
+func (ServerLog) TableName() string {
+	return "server_log"
+}

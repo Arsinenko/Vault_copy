@@ -10,7 +10,8 @@ import (
 	"time"
 	"unsafe"
 
-	"Vault_copy/AuditLog"
+	LogService "Vault_copy/services/log"
+
 	"github.com/gotranspile/runtimec/libc"
 	"github.com/jackc/pgx/pgtype"
 )
@@ -29,7 +30,7 @@ func pass_cmpP(hash_1 []byte, hash_2 []byte) int {
 }
 
 func AuthToken() {
-
+ // TODO
 }
 
 func get_usr(phone_mail string) (models.User, error) {
@@ -50,6 +51,9 @@ func get_usr(phone_mail string) (models.User, error) {
 }
 
 func AuthStandard(phone_mail string, password string) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password)));
+	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, _log_hash);
+
 	user, err := get_usr(phone_mail)
 	if err != nil {
 		return http.StatusNotFound
@@ -57,19 +61,19 @@ func AuthStandard(phone_mail string, password string) int {
 
 	usr_salt1, err_s1 := hex.DecodeString(user.Password[:32])
 	if err_s1 != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID, 0, "")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_salt1)")
 		panic(err_s1)
 	}
 
 	usr_hash, err_h := hex.DecodeString(user.Password[32:96])
 	if err_h != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventDecodePasswdError, user.ID, 0, "")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_hash)")
 		panic(err_h)
 	}
 
 	usr_salt2, err_s2 := hex.DecodeString(user.Password[96:])
 	if err_s2 != nil {
-		AuditLog.CreateAuditLog(AuditLog.EventSaltError, user.ID, 0, "")
+		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "hex:decode(usr_salt2)")
 		panic(err_s2)
 	}
 
@@ -77,16 +81,18 @@ func AuthStandard(phone_mail string, password string) int {
 	auth_ok := pass_cmpP(usr_hash, rn_hash) == 0
 
 	if auth_ok {
-		AuditLog.CreateAuditLog(AuditLog.EventAuth, user.ID, 0, "")
+		LogService.PushAuditLog(LogService.EventAuth, user.ID, 0, _log_hash)
 		return http.StatusOK
-
 	} else {
-		AuditLog.CreateAuditLog(AuditLog.EventUnauthorized, user.ID, 0, "")
+		LogService.PushAuditLog(LogService.EventUnauthorized, user.ID, 0, _log_hash)
 		return http.StatusUnauthorized
 	}
 }
 
 func CreateUser(phone_mail string, password string, full_name string) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password + full_name)));
+	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, _log_hash);
+
 	act_usr, err := get_usr(phone_mail)
 	if err == nil {
 		return http.StatusInternalServerError
@@ -135,7 +141,7 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	}
 
 	db.Create(user)
-	AuditLog.CreateAuditLog(AuditLog.EventRegister, user.ID, 0, "")
+	LogService.PushAuditLog(LogService.EventRegister, user.ID, 0, _log_hash)
 
 	return http.StatusOK
 }
@@ -153,7 +159,7 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 	app.APIPath = APIPath
 	app.CreationDate = time.Now()
 
-	AuditLog.CreateAuditLog(AuditLog.EventCreateApp, app.OwnerID, app.ID, "")
+	LogService.PushAuditLog(LogService.EventCreateApp, app.OwnerID, app.ID, "")
 	db.Create(app)
 
 	return http.StatusOK
@@ -173,7 +179,7 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 	secret.CreationDate = time.Now()
 	secret.Metadata = Metadata
 
-	AuditLog.CreateAuditLog(AuditLog.EventCreateSecret, secret.ID, secret.AppID, "")
+	LogService.PushAuditLog(LogService.EventCreateSecret, secret.ID, secret.AppID, "")
 	db.Create(secret)
 	return http.StatusOK
 }
