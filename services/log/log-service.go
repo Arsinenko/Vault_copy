@@ -12,14 +12,18 @@ const (
 	ErrorDatabase
 	ErrorHexDecode
 	ErrorDBInit
+	ErrorDBExec
 	ErrorCreateApp
 	ErrorCreateSecret
+	ErrorGetUsr
 )
 
 const TErrorHexDecode = "Error decode from hex";
 const TErrorDBInit = "Failed to initialize database connection";
+const TErrorDBExec = "Failed to execute querry";
 const TErrorCreateApp = "Failed to create app";
 const TErrorCreateSecret = "Failed to push secret into database";
+const TErrorGetUsr = "Failed to get user from database"
 
 // audit_log
 func Push_server_log(type_l int16, msg string, stack string, hash string) {

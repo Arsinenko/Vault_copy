@@ -13,6 +13,9 @@ const (
 
 	EventRegister
 	EventTryRegister
+	EventTryRegisterAlreadyExists
+	EventTryRegisterBadPassword
+	EventTryRegisterBadLogin
 	
 	EventSaltError
 	EventDecodePasswdError
