@@ -97,7 +97,6 @@ func AuthStandard(phone_mail string, password string) int {
 	}
 }
 
-
 // TODO: security checks, check password and phone/mail legit by content.
 // MVP READY, STATIC API, FINAL (REST)
 func CreateUser(phone_mail string, password string, full_name string) int {
@@ -183,10 +182,6 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 
 	LogService.PushAuditLog(LogService.EventCreateSecret, 0, secret.AppID, secret.ID, _log_hash)
 	return http.StatusOK
-}
-
-func SecUser() {
-
 }
 
 func MakeToken(userID int32) {
