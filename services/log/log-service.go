@@ -13,11 +13,13 @@ const (
 	ErrorHexDecode
 	ErrorDBInit
 	ErrorCreateApp
+	ErrorCreateSecret
 )
 
 const TErrorHexDecode = "Error decode from hex";
 const TErrorDBInit = "Failed to initialize database connection";
 const TErrorCreateApp = "Failed to create app";
+const TErrorCreateSecret = "Failed to push secret into database";
 
 // audit_log
 func Push_server_log(type_l int16, msg string, stack string, hash string) {

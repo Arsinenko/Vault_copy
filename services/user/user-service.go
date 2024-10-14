@@ -178,7 +178,8 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		panic(err) // TODO -- use server_log
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[CreateSecret]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
 	}
 
 	var secret models.Secret
@@ -187,7 +188,11 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 	secret.AppID = AppID
 	secret.CreationDate = time.Now()
 	secret.Metadata = Metadata
-	db.Create(secret) // TODO -- handle error
+	err = db.Create(&secret).Error
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorCreateSecret, LogService.TErrorCreateSecret, "[CreateSecret]::db.Create(&secret)", _log_hash)
+		return http.StatusInternalServerError
+	}
 
 	LogService.PushAuditLog(LogService.EventCreateSecret, 0, secret.AppID, secret.ID, _log_hash)
 	return http.StatusOK
