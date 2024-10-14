@@ -96,7 +96,7 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 	act_usr, err := get_usr(phone_mail)
 	if err == nil {
 		return http.StatusInternalServerError
-	} // [http]::Conflict - User with that phone or mail already exists
+	}
 	if act_usr.Email == phone_mail || act_usr.PhoneNumber == phone_mail {
 		return http.StatusConflict
 	}
@@ -107,13 +107,13 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 		return http.StatusBadRequest
 	}
 
-	if len(phone_mail) < 3 {
+	if len(phone_mail) < 5 {
 		return http.StatusBadRequest
 	}
 
 	db, e := db_operations.InitDB()
 	if e != nil {
-		panic(e)
+		panic(e) // handle with server_log
 	}
 
 	is_mail := strings.IndexByte(phone_mail, '@') != -1

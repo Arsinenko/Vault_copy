@@ -101,3 +101,13 @@ type ServerLog struct {
 func (ServerLog) TableName() string {
 	return "server_log"
 }
+
+type SessionToken struct {
+	UserID	 int64	    				    `db:"userid"`
+	Hash	   string                 `db:"hash"`
+	Date     time.Time              `db:"creation_date"`
+	Metadata pgtype.JSONB           `db:"metadata"`
+}
+func (SessionToken) TableName() string {
+	return "auth_token"
+}
