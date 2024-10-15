@@ -1,12 +1,12 @@
 package service_app
 
 import (
+	Policy "Vault_copy/Policy"
 	"Vault_copy/db_operations"
 	"Vault_copy/db_operations/cryptoOperation"
 	"Vault_copy/db_operations/models"
 	LogService "Vault_copy/services/log"
 	"encoding/hex"
-	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -67,31 +67,14 @@ func API_AppChangeName(UserID int32, AppID int32, name string) {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
 	LogService.PushAuditLog(LogService.EventTryChangeAppName, UserID, AppID, 0, _log_hash)
 
-	db, e := db_operations.InitDB()
-	if e != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
-		return
-	}
-	// get rules where UserID = UserID and AppID = AppID
-	var policy models.Policy
-	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
-		return
-	}
-	//check if policy is not empty
-	if policy.ID != 0 {
-		LogService.PushAuditLog(LogService.EventChangeAppName, UserID, AppID, 0, _log_hash)
-		return
-	}
-	var rules []string
-	if err := json.Unmarshal(policy.Rules.Bytes, &rules); err != nil {
-		//LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeName]::json.Unmarshal(policy.Rules)", _log_hash)
-		return
-	}
+	rules := Policy.GetRules(AppID, UserID)
+	//TODO - check if PolicyName in rules
 	AppChangeName(AppID, name)
 }
 
+func API_AppChangeDescription(UserID int32, AppID int32, description string) {
+
+}
 func AppChangeDescription(UserID int32, AppID int32, description string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + description)))
 
