@@ -16,19 +16,23 @@ const (
 	ErrorCreateApp
 	ErrorCreateSecret
 	ErrorGetUsr
+	ErrorIGetApp
+	ErrorRuleCheck
+	ErrorISetAppName
+	ErrorISetAppDesc
 )
 
-const TErrorHexDecode = "Error decode from hex"
+const TErrorHexDecode 				= "Error decode from hex"
+const TErrorDBInit				 		= "Failed to initialize database connection"
+const TErrorDBExec 						= "Failed to execute querry"
+const TErrorCreateApp 				= "Failed to create app"
+const TErrorCreateSecret 			= "Failed to push secret into database"
+const TErrorGetUsr 						= "Failed to get user from database"
+const TErrorIGetApp 					= "Failed to get app from database"
+const TErrorRuleCheck 				= "Failed to check rules"
 
-const TErrorDBInit = "Failed to initialize database connection"
-
-const TErrorDBExec = "Failed to execute querry"
-
-const TErrorCreateApp = "Failed to create app"
-
-const TErrorCreateSecret = "Failed to push secret into database"
-
-const TErrorGetUsr = "Failed to get user from database"
+const TErrorISetAppName 			= "Failed to set app name"
+const TErrorISetAppDesc 			= "Failed to set app description"
 
 // audit_log
 func Push_server_log(type_l int16, msg string, stack string, hash string) {
@@ -43,5 +47,4 @@ func Push_server_log(type_l int16, msg string, stack string, hash string) {
 	auditLog.Stack = stack
 	auditLog.Date = time.Now()
 	db.Create(&auditLog) // TODO handle errors
-
 }

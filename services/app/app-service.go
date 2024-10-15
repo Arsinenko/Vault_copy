@@ -1,11 +1,12 @@
 package service_app
 
 import (
-	Policy "Vault_copy/Policy"
 	"Vault_copy/db_operations"
 	"Vault_copy/db_operations/cryptoOperation"
 	"Vault_copy/db_operations/models"
+	iappsrv "Vault_copy/internal"
 	LogService "Vault_copy/services/log"
+	Policy "Vault_copy/services/policy"
 	"encoding/hex"
 	"net/http"
 	"strings"
@@ -41,91 +42,64 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 	return http.StatusOK
 }
 
-// FINAL - STATIC API
-func I_get_app(ID int32) *models.App {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(ID))))
 
-	db, e := db_operations.InitDB()
+
+// TODO: security checks, check name text legit
+// FINAL - STATIC API - 2 LAYER API
+func API_AppChangeName(UserID int32, AppID int32, name string) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID) + name)))
+	LogService.PushAuditLog(LogService.EventChangeAppNameTry, UserID, AppID, 0, _log_hash)
+
+	rule, e := Policy.CheckRule(AppID, UserID, Policy.CanChangeAppName)
 	if e != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_get_app]::db_operations.InitDB()", _log_hash)
-		return nil
+		LogService.Push_server_log(LogService.ErrorRuleCheck, LogService.TErrorRuleCheck, "[API_AppChangeName]::Policy.CheckRule()", _log_hash)
+		return http.StatusInternalServerError;
+	}
+	if !rule {
+		LogService.PushAuditLog(LogService.EventChangeAppNameForbidden, UserID, AppID, 0, _log_hash)
+		return http.StatusForbidden;
 	}
 
-	var app models.App
-	res := db.First(&app, "ID = ?", ID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_get_app]::db_operations.InitDB()", _log_hash)
-		return nil
-	}
-
-	return &app
-}
-
-// TODO: check user policy, security checks, audit log
-func API_AppChangeName(UserID int32, AppID int32, name string) {
-
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
-	LogService.PushAuditLog(LogService.EventTryChangeAppName, UserID, AppID, 0, _log_hash)
-
-	rules := Policy.GetRules(AppID, UserID, _log_hash)
-	//TODO - check if PolicyName in rules
-	AppChangeName(AppID, name)
-}
-
-func API_AppChangeDescription(UserID int32, AppID int32, description string) {
-
-}
-func AppChangeDescription(UserID int32, AppID int32, description string) int {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + description)))
-
-	db, e := db_operations.InitDB()
+	app, e := iappsrv.I_set_app_name(AppID, name)
 	if e != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[AppChangeDescription]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError
+		LogService.Push_server_log(LogService.ErrorISetAppName, LogService.TErrorISetAppName, "[API_AppChangeName]::iappsrv.I_set_app_name(AppID)", _log_hash)
+		return http.StatusInternalServerError;
+	}
+	if app == nil {
+		LogService.PushAuditLog(LogService.EventChangeAppNameNotFound, UserID, AppID, 0, _log_hash)
+		return http.StatusNotFound;
 	}
 
-	var app models.App
-	res := db.First(&app, "ID = ?", AppID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError
-	}
-	app.Description = description
-	err := db.Save(&app).Error
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db.Save(&app)", _log_hash)
-		return http.StatusInternalServerError
-	}
-	LogService.PushAuditLog(LogService.EventChangeAppDescription, UserID, AppID, 0, _log_hash)
-	return http.StatusOK
+	LogService.PushAuditLog(LogService.EventChangeAppName, UserID, AppID, 0, _log_hash)
+	return http.StatusOK;
 }
 
-// TODO
-func AppChangeName(AppID int32, name string) int {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
+// TODO: security checks, check description text legit
+// FINAL - STATIC API - 2 LAYER API
+func API_AppChangeDescription(UserID int32, AppID int32, description string) int {
+  _log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID) + description)))
+	LogService.PushAuditLog(LogService.EventChangeAppDescTry, UserID, AppID, 0, _log_hash)
 
-	db, e := db_operations.InitDB()
+	rule, e := Policy.CheckRule(AppID, UserID, Policy.CanChangeAppDesc)
 	if e != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[AppChangeName]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError
+		LogService.Push_server_log(LogService.ErrorRuleCheck, LogService.TErrorRuleCheck, "[API_AppChangeDescription]::Policy.CheckRule()", _log_hash)
+		return http.StatusInternalServerError;
+	}
+	if !rule {
+		LogService.PushAuditLog(LogService.EventChangeAppDescForbidden, UserID, AppID, 0, _log_hash)
+		return http.StatusForbidden;
 	}
 
-	var app models.App
-	res := db.First(&app, "ID = ?", AppID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError
+	app, e := iappsrv.I_set_app_desc(AppID, description)
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorISetAppDesc, LogService.TErrorISetAppDesc, "[API_AppChangeDescription]::iappsrv.I_set_app_desc(AppID)", _log_hash)
+		return http.StatusInternalServerError;
 	}
-	app.Name = name
-	err := db.Save(&app).Error
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db.Save(&app)", _log_hash)
-		return http.StatusInternalServerError
+	if app == nil {
+		LogService.PushAuditLog(LogService.EventChangeAppDescNotFound, UserID, AppID, 0, _log_hash)
+		return http.StatusNotFound;
 	}
-	LogService.PushAuditLog(LogService.EventChangeAppName, 0, AppID, 0, _log_hash)
-	return http.StatusOK
+
+	LogService.PushAuditLog(LogService.EventChangeAppDesc, UserID, AppID, 0, _log_hash)
+	return http.StatusOK;
 }
-
-//db.Exec("")
-//panic("NotImplemented")
-//}

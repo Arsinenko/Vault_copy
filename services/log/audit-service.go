@@ -29,8 +29,15 @@ const (
 	EventCreateSecret
 	EventTryCreateSecret
 
-	EventTryChangeAppName
 	EventChangeAppName
+	EventChangeAppNameTry
+	EventChangeAppNameForbidden
+	EventChangeAppNameNotFound
+
+	EventChangeAppDesc
+	EventChangeAppDescTry
+	EventChangeAppDescForbidden
+	EventChangeAppDescNotFound
 
 	EventTryChangeAppDescription
 	EventChangeAppDescription
