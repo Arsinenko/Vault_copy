@@ -6,6 +6,7 @@ import (
 	"Vault_copy/db_operations/models"
 	LogService "Vault_copy/services/log"
 	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -42,39 +43,77 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 
 // FINAL - STATIC API
 func I_get_app(ID int32) *models.App {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(ID))));
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(ID))))
 
 	db, e := db_operations.InitDB()
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_get_app]::db_operations.InitDB()", _log_hash)
-		return nil;
+		return nil
 	}
 
-	var app models.App;
-	res := db.First(&app, "ID = ?", ID);
+	var app models.App
+	res := db.First(&app, "ID = ?", ID)
 	if res.Error != nil {
 		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_get_app]::db_operations.InitDB()", _log_hash)
-		return nil;
+		return nil
 	}
 
-	return &app;
+	return &app
 }
 
 // TODO: check user policy, security checks, audit log
 func API_AppChangeName(UserID int32, AppID int32, name string) {
 
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
+	LogService.PushAuditLog(LogService.EventTryChangeAppName, UserID, AppID, 0, _log_hash)
+
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
+		return
+	}
+	// get rules where UserID = UserID and AppID = AppID
+	var policy models.Policy
+	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
+		return
+	}
+	//check if policy is not empty
+	if policy.ID != 0 {
+		LogService.PushAuditLog(LogService.EventChangeAppName, UserID, AppID, 0, _log_hash)
+		return
+	}
+	var rules []string
+	if err := json.Unmarshal(policy.Rules.Bytes, &rules); err != nil {
+		LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeName]::json.Unmarshal(policy.Rules)", _log_hash)
+		return
+	}
+	var app models.App
+	res = db.First(&app, "ID = ?", AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
+		return
+	}
+	app.Name = name
+	err := db.Save(&app).Error
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db.Save(&app)", _log_hash)
+		return
+	}
+	LogService.PushAuditLog(LogService.EventChangeAppName, UserID, AppID, 0, _log_hash)
 }
 
 // TODO
 func AppChangeName(AppID int32, name string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
-	
+
 	db, e := db_operations.InitDB()
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[AppChangeName]::db_operations.InitDB()", _log_hash)
 		return http.StatusInternalServerError
 	}
 
-	db.Exec("");
-	panic("NotImplemented");
+	db.Exec("")
+	panic("NotImplemented")
 }
