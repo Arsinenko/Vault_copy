@@ -67,7 +67,7 @@ func API_AppChangeName(UserID int32, AppID int32, name string) {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + name)))
 	LogService.PushAuditLog(LogService.EventTryChangeAppName, UserID, AppID, 0, _log_hash)
 
-	rules := Policy.GetRules(AppID, UserID)
+	rules := Policy.GetRules(AppID, UserID, _log_hash)
 	//TODO - check if PolicyName in rules
 	AppChangeName(AppID, name)
 }

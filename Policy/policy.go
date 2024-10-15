@@ -17,7 +17,7 @@ const (
 	patchingPolicy = "patch"
 )
 
-func GetRules(UserID int32, AppID int32) []string {
+func GetRules(UserID int32, AppID int32, _log_hash string) []string {
 	db, e := db_operations.InitDB()
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
