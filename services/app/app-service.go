@@ -86,22 +86,51 @@ func API_AppChangeName(UserID int32, AppID int32, name string) {
 	}
 	var rules []string
 	if err := json.Unmarshal(policy.Rules.Bytes, &rules); err != nil {
-		LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeName]::json.Unmarshal(policy.Rules)", _log_hash)
+		//LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeName]::json.Unmarshal(policy.Rules)", _log_hash)
 		return
+	}
+	AppChangeName(AppID, name)
+}
+
+func AppChangeDescription(UserID int32, AppID int32, description string) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID) + description)))
+
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[AppChangeDescription]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
+	}
+
+	var policy models.Policy
+	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
+	}
+	//check if policy is not empty
+	if policy.ID != 0 {
+		LogService.PushAuditLog(LogService.EventChangeAppDescription, UserID, AppID, 0, _log_hash)
+		return http.StatusOK
+	}
+	var rules []string
+	if err := json.Unmarshal(policy.Rules.Bytes, &rules); err != nil {
+		//LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeDescription]::json.Unmarshal(policy.Rules)", _log_hash)
+		return http.StatusInternalServerError
 	}
 	var app models.App
 	res = db.First(&app, "ID = ?", AppID)
 	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
-		return
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
 	}
-	app.Name = name
+	app.Description = description
 	err := db.Save(&app).Error
 	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db.Save(&app)", _log_hash)
-		return
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db.Save(&app)", _log_hash)
+		return http.StatusInternalServerError
 	}
-	LogService.PushAuditLog(LogService.EventChangeAppName, UserID, AppID, 0, _log_hash)
+	LogService.PushAuditLog(LogService.EventChangeAppDescription, UserID, AppID, 0, _log_hash)
+	return http.StatusOK
 }
 
 // TODO
@@ -114,6 +143,22 @@ func AppChangeName(AppID int32, name string) int {
 		return http.StatusInternalServerError
 	}
 
-	db.Exec("")
-	panic("NotImplemented")
+	var app models.App
+	res := db.First(&app, "ID = ?", AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
+	}
+	app.Name = name
+	err := db.Save(&app).Error
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeName]::db.Save(&app)", _log_hash)
+		return http.StatusInternalServerError
+	}
+	LogService.PushAuditLog(LogService.EventChangeAppName, 0, AppID, 0, _log_hash)
+	return http.StatusOK
 }
+
+//db.Exec("")
+//panic("NotImplemented")
+//}

@@ -18,11 +18,16 @@ const (
 	ErrorGetUsr
 )
 
-const TErrorHexDecode = "Error decode from hex";
-const TErrorDBInit = "Failed to initialize database connection";
-const TErrorDBExec = "Failed to execute querry";
-const TErrorCreateApp = "Failed to create app";
-const TErrorCreateSecret = "Failed to push secret into database";
+const TErrorHexDecode = "Error decode from hex"
+
+const TErrorDBInit = "Failed to initialize database connection"
+
+const TErrorDBExec = "Failed to execute querry"
+
+const TErrorCreateApp = "Failed to create app"
+
+const TErrorCreateSecret = "Failed to push secret into database"
+
 const TErrorGetUsr = "Failed to get user from database"
 
 // audit_log
@@ -37,5 +42,6 @@ func Push_server_log(type_l int16, msg string, stack string, hash string) {
 	auditLog.Type = type_l
 	auditLog.Stack = stack
 	auditLog.Date = time.Now()
-	db.Create(&auditLog) // TODO handle errors 
+	db.Create(&auditLog) // TODO handle errors
+
 }
