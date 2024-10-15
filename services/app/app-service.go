@@ -101,24 +101,8 @@ func AppChangeDescription(UserID int32, AppID int32, description string) int {
 		return http.StatusInternalServerError
 	}
 
-	var policy models.Policy
-	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError
-	}
-	//check if policy is not empty
-	if policy.ID != 0 {
-		LogService.PushAuditLog(LogService.EventChangeAppDescription, UserID, AppID, 0, _log_hash)
-		return http.StatusOK
-	}
-	var rules []string
-	if err := json.Unmarshal(policy.Rules.Bytes, &rules); err != nil {
-		//LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[API_AppChangeDescription]::json.Unmarshal(policy.Rules)", _log_hash)
-		return http.StatusInternalServerError
-	}
 	var app models.App
-	res = db.First(&app, "ID = ?", AppID)
+	res := db.First(&app, "ID = ?", AppID)
 	if res.Error != nil {
 		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[API_AppChangeDescription]::db_operations.InitDB()", _log_hash)
 		return http.StatusInternalServerError
