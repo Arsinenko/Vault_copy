@@ -1,4 +1,4 @@
-package int_service_app
+package internal_api
 
 import (
 	"Vault_copy/db_operations"
@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 )
 
-// FINAL - STATIC API - 3 LAYER API
+// * FINAL - STATIC API - 3 LAYER API
 func I_get_app(ID int32) (*models.App, error) {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(ID))))
 
@@ -27,7 +27,6 @@ func I_get_app(ID int32) (*models.App, error) {
 
 	return &app, nil
 }
-
 
 // * FINAL - STATIC API - 3 LAYER API
 func I_set_app_name(ID int32, Name string) (*models.App, error) {
@@ -79,7 +78,6 @@ func I_set_app_desc(ID int32, Desription string) (*models.App, error) {
 	return app, nil
 }
 
-
 // ! BEFORE <-- move policy into internal api segment
 // func I_app_add_user(UserID int32, AppID int32, ) *models.Policy{
 // 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID))))
@@ -99,7 +97,6 @@ func I_set_app_desc(ID int32, Desription string) (*models.App, error) {
 // 	}
 // 	return res
 // }
-
 
 // I_app_description
 // I_app_add_user (!policy)

@@ -13,18 +13,27 @@ const (
 	ErrorHexDecode
 	ErrorDBInit
 	ErrorDBExec
+	ErrorDBSave
 	ErrorCreateApp
 	ErrorCreateSecret
 	ErrorGetUsr
 	ErrorIGetApp
 	ErrorRuleCheck
+
 	ErrorISetAppName
 	ErrorISetAppDesc
+
+	ErrorIEncPolicy
+	ErrorIDecPolicy
+
+	ErrorJSONUnmarshal
+	ErrorJSONMarshal
 )
 
 const TErrorHexDecode 				= "Error decode from hex"
 const TErrorDBInit				 		= "Failed to initialize database connection"
 const TErrorDBExec 						= "Failed to execute querry"
+const TErrorDBSave 						= "Failed to save module in DB"
 const TErrorCreateApp 				= "Failed to create app"
 const TErrorCreateSecret 			= "Failed to push secret into database"
 const TErrorGetUsr 						= "Failed to get user from database"
@@ -33,6 +42,12 @@ const TErrorRuleCheck 				= "Failed to check rules"
 
 const TErrorISetAppName 			= "Failed to set app name"
 const TErrorISetAppDesc 			= "Failed to set app description"
+
+const TErrorIEncPolicy				= "Failed to encode policy"
+const TErrorIDecPolicy				= "Failed to decode policy"
+
+const TErrorJSONUnmarshal 		= "Failed to unmarshal json"
+const TErrorJSONMarshal 		  = "Failed to marshal json"
 
 // audit_log
 func Push_server_log(type_l int16, msg string, stack string, hash string) {

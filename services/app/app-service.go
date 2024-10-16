@@ -4,9 +4,8 @@ import (
 	"Vault_copy/db_operations"
 	"Vault_copy/db_operations/cryptoOperation"
 	"Vault_copy/db_operations/models"
-	iappsrv "Vault_copy/internal"
+	IAPI "Vault_copy/internal"
 	LogService "Vault_copy/services/log"
-	Policy "Vault_copy/services/policy"
 	"encoding/hex"
 	"net/http"
 	"strings"
@@ -50,7 +49,7 @@ func API_AppChangeName(UserID int32, AppID int32, name string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID) + name)))
 	LogService.PushAuditLog(LogService.EventChangeAppNameTry, UserID, AppID, 0, _log_hash)
 
-	rule, e := Policy.CheckRule(AppID, UserID, Policy.CanChangeAppName)
+	rule, e := IAPI.I_get_policy_rule(AppID, UserID, IAPI.I_rule_change_app_name)
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorRuleCheck, LogService.TErrorRuleCheck, "[API_AppChangeName]::Policy.CheckRule()", _log_hash)
 		return http.StatusInternalServerError;
@@ -60,7 +59,7 @@ func API_AppChangeName(UserID int32, AppID int32, name string) int {
 		return http.StatusForbidden;
 	}
 
-	app, e := iappsrv.I_set_app_name(AppID, name)
+	app, e := IAPI.I_set_app_name(AppID, name)
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorISetAppName, LogService.TErrorISetAppName, "[API_AppChangeName]::iappsrv.I_set_app_name(AppID)", _log_hash)
 		return http.StatusInternalServerError;
@@ -80,7 +79,7 @@ func API_AppChangeDescription(UserID int32, AppID int32, description string) int
   _log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID) + description)))
 	LogService.PushAuditLog(LogService.EventChangeAppDescTry, UserID, AppID, 0, _log_hash)
 
-	rule, e := Policy.CheckRule(AppID, UserID, Policy.CanChangeAppDesc)
+	rule, e := IAPI.I_get_policy_rule(AppID, UserID, IAPI.I_rule_change_app_desc)
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorRuleCheck, LogService.TErrorRuleCheck, "[API_AppChangeDescription]::Policy.CheckRule()", _log_hash)
 		return http.StatusInternalServerError;
@@ -90,7 +89,7 @@ func API_AppChangeDescription(UserID int32, AppID int32, description string) int
 		return http.StatusForbidden;
 	}
 
-	app, e := iappsrv.I_set_app_desc(AppID, description)
+	app, e := IAPI.I_set_app_desc(AppID, description)
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorISetAppDesc, LogService.TErrorISetAppDesc, "[API_AppChangeDescription]::iappsrv.I_set_app_desc(AppID)", _log_hash)
 		return http.StatusInternalServerError;
