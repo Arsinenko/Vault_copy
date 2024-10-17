@@ -1,8 +1,8 @@
 package server
 
 import (
-	service_app "Vault_copy/services/app"
-	service_user "Vault_copy/services/user"
+	serviceApp "Vault_copy/services/app"
+	serviceUser "Vault_copy/services/user"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/pgtype"
@@ -35,7 +35,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_user.AuthStandard(authReq.PhoneMail, authReq.Password)
+	status := serviceUser.AuthStandard(authReq.PhoneMail, authReq.Password)
 
 	response := Response{
 		Status: status,
@@ -47,7 +47,10 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		response.Message = "Authentication failed"
 	}
 
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +63,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_user.Register(regReq.PhoneMail, regReq.Password, regReq.FullName)
+	status := serviceUser.Register(regReq.PhoneMail, regReq.Password, regReq.FullName)
 
 	response := Response{
 		Status: status,
@@ -72,7 +75,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		response.Message = "Registration failed"
 	}
 
-	json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func CreateAppHandler(w http.ResponseWriter, r *http.Request) {
@@ -86,10 +92,13 @@ func CreateAppHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_app.CreateApp(app.Name, app.Description, app.OwnerID, pgtype.JSONB{})
+	status := serviceApp.CreateApp(app.Name, app.Description, app.OwnerID, pgtype.JSONB{})
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App creation attempt", Status: status}
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,10 +112,13 @@ func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_app.API_AppChangeName(req.UserID, req.AppID, req.Name)
+	status := serviceApp.API_AppChangeName(req.UserID, req.AppID, req.Name)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App name change attempt", Status: status}
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
@@ -120,10 +132,13 @@ func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_app.API_AppChangeDescription(req.UserID, req.AppID, req.Description)
+	status := serviceApp.API_AppChangeDescription(req.UserID, req.AppID, req.Description)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App description change attempt", Status: status}
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
@@ -138,10 +153,13 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_user.CreateSecret(secret.SID, secret.Data, secret.AppID, secret.Metadata)
+	status := serviceUser.CreateSecret(secret.SID, secret.Data, secret.AppID, secret.Metadata)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "Secret creation attempt", Status: status}
-	json.NewEncoder(w).Encode(response)
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
 }
 
 func RunServer() {
@@ -153,5 +171,8 @@ func RunServer() {
 	r.HandleFunc("/api/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT")
 	r.HandleFunc("/api/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
 
-	http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(":8080", r)
+	if err != nil {
+		return
+	}
 }
