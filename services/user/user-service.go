@@ -30,17 +30,17 @@ func pass_cmpP(hash_1 []byte, hash_2 []byte) int {
 }
 
 func AuthToken() {
- // TODO
+	// TODO
 }
 
 // FINAL - STATIC API
 func get_usr(phone_mail string) (*models.User, error) {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail)));
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail)))
 
 	db, e := db_operations.InitDB()
 	if e != nil {
 		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[get_usr]::db_operations.InitDB()", _log_hash)
-		return nil, e;
+		return nil, e
 	}
 
 	is_mail := strings.IndexByte(phone_mail, '@') != -1
@@ -58,8 +58,8 @@ func get_usr(phone_mail string) (*models.User, error) {
 // TODO: security checks
 // MVP READY, STATIC API, FINAL (REST)
 func AuthStandard(phone_mail string, password string) int {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password)));
-	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, 0, _log_hash);
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password)))
+	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, 0, _log_hash)
 
 	user, err := get_usr(phone_mail)
 	if err != nil {
@@ -99,34 +99,34 @@ func AuthStandard(phone_mail string, password string) int {
 
 // TODO: security checks, check password and phone/mail legit by content.
 // MVP READY, STATIC API, FINAL (REST)
-func CreateUser(phone_mail string, password string, full_name string) int {
-	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password + full_name)));
-	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, 0, _log_hash);
+func Register(phone_mail string, password string, full_name string) int {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password + full_name)))
+	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, 0, _log_hash)
 
 	act_usr, err := get_usr(phone_mail)
 	if err == nil {
-		LogService.Push_server_log(LogService.ErrorGetUsr, LogService.TErrorGetUsr, "[CreateUser]::get_usr(phone_mail)", _log_hash)
+		LogService.Push_server_log(LogService.ErrorGetUsr, LogService.TErrorGetUsr, "[Register]::get_usr(phone_mail)", _log_hash)
 		return http.StatusInternalServerError
 	}
 	if act_usr.Email == phone_mail || act_usr.PhoneNumber == phone_mail {
-		LogService.PushAuditLog(LogService.EventTryRegisterAlreadyExists, 0, 0, 0, _log_hash);
+		LogService.PushAuditLog(LogService.EventTryRegisterAlreadyExists, 0, 0, 0, _log_hash)
 		return http.StatusConflict
 	}
 
 	if len(password) < 8 {
-		LogService.PushAuditLog(LogService.EventTryRegisterBadPassword, 0, 0, 0, _log_hash);
-		return http.StatusBadRequest;
+		LogService.PushAuditLog(LogService.EventTryRegisterBadPassword, 0, 0, 0, _log_hash)
+		return http.StatusBadRequest
 	}
 
 	if len(phone_mail) < 5 {
-		LogService.PushAuditLog(LogService.EventTryRegisterBadLogin, 0, 0, 0, _log_hash);
-		return http.StatusBadRequest;
+		LogService.PushAuditLog(LogService.EventTryRegisterBadLogin, 0, 0, 0, _log_hash)
+		return http.StatusBadRequest
 	}
 
 	db, e := db_operations.InitDB()
 	if e != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[CreateUser]::db_operations.InitDB()", _log_hash)
-		return http.StatusInternalServerError;
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[Register]::db_operations.InitDB()", _log_hash)
+		return http.StatusInternalServerError
 	}
 
 	is_mail := strings.IndexByte(phone_mail, '@') != -1
@@ -159,8 +159,8 @@ func CreateUser(phone_mail string, password string, full_name string) int {
 }
 
 func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int { // SID, ya hz ne pomny zachem eto)))))
-	_log_hash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(SID+string(AppID)), Data...)), Metadata.Bytes...));
-	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, _log_hash);
+	_log_hash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(SID+string(AppID)), Data...)), Metadata.Bytes...))
+	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, _log_hash)
 
 	db, err := db_operations.InitDB()
 	if err != nil {

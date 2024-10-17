@@ -57,7 +57,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := service_user.CreateUser(regReq.PhoneMail, regReq.Password, regReq.FullName)
+	status := service_user.Register(regReq.PhoneMail, regReq.Password, regReq.FullName)
 
 	response := Response{
 		Status: status,
