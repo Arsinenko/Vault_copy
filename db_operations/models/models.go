@@ -8,11 +8,10 @@ import (
 
 type Secret struct {
 	ID           int64        `db:"id"`
-	SID          string       `db:"sid"`
 	Data         []byte       `db:"data"`
 	AppID        int32        `db:"app_id"`
 	CreationDate time.Time    `db:"creation_date"`
-	Metadata     pgtype.JSONB `db:"metadata"`
+	Metadata     string       `db:"metadata"`
 }
 
 func (Secret) TableName() string {
@@ -25,7 +24,7 @@ type App struct {
 	Description  string       `db:"description"`
 	OwnerID      int32        `db:"owner_id"`
 	CreationDate time.Time    `db:"creation_date"`
-	Metadata     pgtype.JSONB `db:"metadata"`
+	Metadata     string			  `db:"metadata"`
 	APIPath      string       `db:"api_path"`
 }
 
@@ -39,9 +38,9 @@ type User struct {
 	PhoneNumber  string       `db:"phone_number"`
 	Email        string       `db:"email"`
 	TwoFactorKey string       `db:"two_factor_key"`
-	CreationDate time.Time    `db:"creation_date"`
+	CreationDate time.Time        `db:"creation_date"`
 	Password     string       `db:"password"`
-	Metadata     pgtype.JSONB `db:"metadata"`
+	Metadata     string 		  `db:"metadata"`
 }
 
 func (User) TableName() string {

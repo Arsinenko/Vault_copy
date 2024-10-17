@@ -5,6 +5,7 @@ import (
 	serviceUser "Vault_copy/services/user"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/pgtype"
@@ -108,8 +109,7 @@ func CreateAppHandler(w http.ResponseWriter, r *http.Request) {
 
 func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		UserID int32  `json:"user_id"`
-		AppID  int32  `json:"app_id"`
+		UserID int32  `json:"user_id"` // TODO <- remove, get from auth token
 		Name   string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -117,7 +117,17 @@ func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := serviceApp.API_AppChangeName(req.UserID, req.AppID, req.Name)
+	vars := mux.Vars(r)
+  AppIDstr := vars["app_id"];
+	AppID, errr := strconv.Atoi(AppIDstr)
+	if errr != nil {
+		// Handle the error (e.g., invalid app_id)
+		http.Error(w, "Invalid app_id", http.StatusBadRequest)
+		return
+	}
+
+
+	status := serviceApp.API_AppChangeName(req.UserID, int32(AppID), req.Name)
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
@@ -155,14 +165,13 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 		SID      string       `json:"sid"`
 		Data     []byte       `json:"data"`
 		AppID    int32        `json:"app_id"`
-		Metadata pgtype.JSONB `json:"metadata"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&secret); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := serviceUser.CreateSecret(secret.SID, secret.Data, secret.AppID, secret.Metadata)
+	status := serviceUser.CreateSecret(secret.Data, secret.AppID, "{}")
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")

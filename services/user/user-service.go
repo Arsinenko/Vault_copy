@@ -13,7 +13,6 @@ import (
 	LogService "Vault_copy/services/log"
 
 	"github.com/gotranspile/runtimec/libc"
-	"github.com/jackc/pgx/pgtype"
 )
 
 // import "C"
@@ -103,15 +102,19 @@ func Register(phone_mail string, password string, full_name string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phone_mail + password + full_name)))
 	LogService.PushAuditLog(LogService.EventTryRegister, 0, 0, 0, _log_hash)
 
-	act_usr, err := get_usr(phone_mail)
+	_, err := get_usr(phone_mail)
 	if err == nil {
-		LogService.Push_server_log(LogService.ErrorGetUsr, LogService.TErrorGetUsr, "[Register]::get_usr(phone_mail)", _log_hash)
-		return http.StatusInternalServerError
-	}
-	if act_usr.Email == phone_mail || act_usr.PhoneNumber == phone_mail {
-		LogService.PushAuditLog(LogService.EventTryRegisterAlreadyExists, 0, 0, 0, _log_hash)
+		// TODO LOG
+		//LogService.Push_server_log(LogService.ErrorGetUsr, LogService.TErrorGetUsr, "[Register]::get_usr(phone_mail)", _log_hash)
 		return http.StatusConflict
 	}
+
+	// ! ERROR <- broken 
+	// if (strings.Compare(act_usr.Email, phone_mail) == 0 || strings.Compare(act_usr.PhoneNumber, phone_mail) == 0) {
+	// 	LogService.PushAuditLog(LogService.EventTryRegisterAlreadyExists, 0, 0, 0, _log_hash)
+	// 	return http.StatusConflict
+	// }
+	// <--- STOPED HERE
 
 	if len(password) < 8 {
 		LogService.PushAuditLog(LogService.EventTryRegisterBadPassword, 0, 0, 0, _log_hash)
@@ -140,10 +143,11 @@ func Register(phone_mail string, password string, full_name string) int {
 	s = append(s, salt_2[:]...)
 
 	var user models.User
-	user.CreationDate = time.Now()
+	user.CreationDate = time.Now();
 	user.Password = hex.EncodeToString(s)
-	user.Metadata = pgtype.JSONB{}
 	user.FullName = full_name
+	user.Metadata = "{}";
+	user.TwoFactorKey = "nil"
 
 	if is_mail {
 		user.Email = phone_mail
@@ -152,14 +156,15 @@ func Register(phone_mail string, password string, full_name string) int {
 		user.PhoneNumber = phone_mail
 		user.Email = "nil"
 	}
-	db.Create(user)
+	
+	db.Create(&user)
 
 	LogService.PushAuditLog(LogService.EventRegister, user.ID, 0, 0, _log_hash)
 	return http.StatusOK
 }
 
-func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) int { // SID, ya hz ne pomny zachem eto)))))
-	_log_hash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(SID+string(AppID)), Data...)), Metadata.Bytes...))
+func CreateSecret(Data []byte, AppID int32, Metadata string) int { // SID, ya hz ne pomny zachem eto)))))
+	_log_hash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(string(AppID)+Metadata), Data...)))) // TODO fix FMT
 	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, _log_hash)
 
 	db, err := db_operations.InitDB()
@@ -169,16 +174,12 @@ func CreateSecret(SID string, Data []byte, AppID int32, Metadata pgtype.JSONB) i
 	}
 
 	var secret models.Secret
-	secret.SID = SID
 	secret.Data = Data
 	secret.AppID = AppID
 	secret.CreationDate = time.Now()
 	secret.Metadata = Metadata
-	err = db.Create(&secret).Error
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorCreateSecret, LogService.TErrorCreateSecret, "[CreateSecret]::db.Create(&secret)", _log_hash)
-		return http.StatusInternalServerError
-	}
+
+	db.Create(&secret) // TODO
 
 	LogService.PushAuditLog(LogService.EventCreateSecret, 0, secret.AppID, secret.ID, _log_hash)
 	return http.StatusOK

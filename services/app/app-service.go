@@ -28,14 +28,11 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 	app.Name = Name
 	app.Description = Description
 	app.OwnerID = OwnerID
-	app.Metadata = metadata
+	app.Metadata = "{}"
 	app.APIPath = strings.ToLower(strings.ReplaceAll(Name, " ", "_"))
 	app.CreationDate = time.Now()
-	err := db.Create(&app).Error
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorCreateApp, LogService.TErrorCreateApp, "[CreateApp]::db.Create(&app)", _log_hash)
-		return http.StatusInternalServerError
-	}
+	db.Create(&app)
+	
 	LogService.PushAuditLog(LogService.EventCreateApp, app.OwnerID, app.ID, 0, _log_hash)
 
 	return http.StatusOK
@@ -43,7 +40,7 @@ func CreateApp(Name string, Description string, OwnerID int32, metadata pgtype.J
 
 
 
-// TODO: security checks, check name text legit
+// TODO: security checks, check name text legit. last error
 // FINAL - STATIC API - 2 LAYER API
 func API_AppChangeName(UserID int32, AppID int32, name string) int {
 	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID) + name)))
