@@ -4,9 +4,10 @@ import (
 	serviceApp "Vault_copy/services/app"
 	serviceUser "Vault_copy/services/user"
 	"encoding/json"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/jackc/pgx/pgtype"
-	"net/http"
 )
 
 type Response struct {
@@ -47,6 +48,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		response.Message = "Authentication failed"
 	}
 
+	w.WriteHeader(status)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		return
@@ -75,6 +77,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		response.Message = "Registration failed"
 	}
 
+	w.WriteHeader(status)
 	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		return
@@ -93,6 +96,8 @@ func CreateAppHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := serviceApp.CreateApp(app.Name, app.Description, app.OwnerID, pgtype.JSONB{})
+
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App creation attempt", Status: status}
 	err := json.NewEncoder(w).Encode(response)
@@ -113,6 +118,8 @@ func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := serviceApp.API_AppChangeName(req.UserID, req.AppID, req.Name)
+
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App name change attempt", Status: status}
 	err := json.NewEncoder(w).Encode(response)
@@ -133,6 +140,8 @@ func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := serviceApp.API_AppChangeDescription(req.UserID, req.AppID, req.Description)
+
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App description change attempt", Status: status}
 	err := json.NewEncoder(w).Encode(response)
@@ -154,6 +163,8 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := serviceUser.CreateSecret(secret.SID, secret.Data, secret.AppID, secret.Metadata)
+
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "Secret creation attempt", Status: status}
 	err := json.NewEncoder(w).Encode(response)
@@ -164,12 +175,14 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 
 func RunServer() {
 	r := mux.NewRouter()
-	r.HandleFunc("/api/user/auth", AuthHandler).Methods("POST")
-	r.HandleFunc("/api/user/register", RegisterHandler).Methods("POST")
-	r.HandleFunc("/api/app/create", CreateAppHandler).Methods("POST")
-	r.HandleFunc("/api/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT")
-	r.HandleFunc("/api/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT")
-	r.HandleFunc("/api/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
+	r.HandleFunc("/api/v1/user/auth", AuthHandler).Methods("POST")
+	r.HandleFunc("/api/v1/user/register", RegisterHandler).Methods("POST")
+	r.HandleFunc("/api/v1/app/create", CreateAppHandler).Methods("POST")
+
+	// [GET] /api/v1/app/{app_id}/[date_update, date_create]]
+	r.HandleFunc("/api/v1/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/name -- return name of app
+	r.HandleFunc("/api/v1/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/description -- return name of app
+	r.HandleFunc("/api/v1/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
 
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
