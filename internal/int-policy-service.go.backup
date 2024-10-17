@@ -1,0 +1,312 @@
+package internal_api
+
+import (
+	"Vault_copy/db_operations"
+	"Vault_copy/db_operations/cryptoOperation"
+	"Vault_copy/db_operations/models"
+	"fmt"
+	"time"
+
+	LogService "Vault_copy/services/log"
+	"encoding/hex"
+	"encoding/json"
+
+	"github.com/jackc/pgx/pgtype"
+	"github.com/jinzhu/gorm"
+)
+
+const (
+	I_rule_change_app_name = "change_app_name"
+	I_rule_change_app_desc = "change_app_desc"
+)
+
+var defaultRules = map[string]bool{
+	I_rule_change_app_name: false,
+	I_rule_change_app_desc: false,
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Function to check if a user policy exists
+func I_policy_exists(db *gorm.DB, UserID int32) bool {
+	var user models.User
+	result := db.First(&user, UserID)
+	return result.Error == nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Decode user rules as map[string] bool
+func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID))))
+
+	// init database
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_dec_policy]::db_operations.InitDB()", _log_hash)
+		return nil, e
+	}
+
+	// try to find entry
+	var policy *models.Policy
+	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_dec_policy]::db.First()", _log_hash)
+		return nil, res.Error
+	}
+
+	// user isn't in app
+	if policy == nil {
+		return nil, nil
+	}
+
+	// decode json
+	var json_o map[string]bool
+	if err := json.Unmarshal(policy.Rules.Bytes, &json_o); err != nil {
+		LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[I_dec_policy]::json.Unmarshal()", _log_hash)
+		return nil, err
+	}
+
+	return &json_o, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Encode input user rules map[string] bool and store it in database
+func I_enc_policy(UserID int32, AppID int32, json_o map[string]bool) (*models.Policy, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID) + fmt.Sprint(json_o))))
+
+	// init database
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_enc_policy]::db_operations.InitDB()", _log_hash)
+		return nil, e
+	}
+
+	if !I_policy_exists(db, UserID) {
+		return nil, fmt.Errorf("user does not exist")
+	}
+
+	// try to find entry
+	var policy *models.Policy
+	res := db.First(policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_enc_policy]::db.First()", _log_hash)
+		return nil, res.Error
+	}
+	// user isn't in app
+	if policy == nil {
+		return nil, nil
+	}
+
+	// encode json to bytes
+	raw_str, err := json.Marshal(json_o)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[I_enc_policy]::json.Unmarshal()", _log_hash)
+		return nil, err
+	}
+
+	// update and save policy entry
+	policy.Rules.Bytes = raw_str
+	policy.DateChanged.Time = time.Now()
+
+	res = db.Save(&policy)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBSave, LogService.TErrorDBSave, "[I_enc_policy]::db.Save()", _log_hash)
+		return nil, res.Error
+	}
+
+	return policy, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Set user policy rule if user exists in app
+func I_set_policy_rule(UserID int32, AppID int32, Rule string, value bool) (*models.Policy, error) {
+	var lv string
+	if value {
+		lv = "1"
+	} else {
+		lv = "0"
+	}
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID) + Rule + string(lv))))
+
+	// decode existent policy entry from database
+	json_o, err := I_dec_policy(UserID, AppID)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorIDecPolicy, LogService.TErrorIDecPolicy, "[I_set_policy_rule]::I_dec_policy()", _log_hash)
+		return nil, err
+	}
+	if json_o == nil {
+		return nil, nil
+	}
+
+	// Set value at rule
+	(*json_o)[Rule] = value
+
+	// save changed policy entry into database
+	policy, err := I_enc_policy(UserID, AppID, *json_o)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorIEncPolicy, LogService.TErrorIEncPolicy, "[I_set_policy_rule]::I_dec_policy()", _log_hash)
+		return nil, err
+	}
+	if policy == nil {
+		return nil, nil
+	}
+
+	return policy, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Get user policy rule value
+func I_get_policy_rule(UserID int32, AppID int32, Rule string) (bool, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID))))
+
+	// decode existent policy entry from database
+	json_o, err := I_dec_policy(UserID, AppID)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorIDecPolicy, LogService.TErrorIDecPolicy, "[I_get_policy_rule]::I_dec_policy()", _log_hash)
+		return false, err
+	}
+	if json_o == nil {
+		return false, nil
+	} // false - user not in app
+
+	// false - policy critical error | impossible state
+	return (*json_o)[Rule] || false, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// I_add_user_policy adds a user policy entry with default values.
+func I_add_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID))))
+
+	// Initialize database
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_add_user_policy]::db_operations.InitDB()", _log_hash)
+		return nil, e
+	}
+
+	if !I_policy_exists(db, UserID) {
+		return nil, fmt.Errorf("user does not exist")
+	}
+
+	// Create a new policy with default values
+	raw_str, err := json.Marshal(defaultRules) // TODO check user is owner !!!
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorJSONMarshal, LogService.TErrorJSONMarshal, "[I_add_user_policy]::json.Marshal()", _log_hash)
+		return nil, err
+	}
+
+	policy := &models.Policy{
+		UserID:      UserID,
+		AppID:       AppID,
+		Rules:       pgtype.JSONB{Bytes: raw_str},
+		DateCreated: pgtype.Timestamptz{Time: time.Now()},
+		DateChanged: pgtype.Timestamptz{Time: time.Now()},
+	}
+
+	// Save the new policy entry to the database
+	res := db.Create(policy)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBSave, LogService.TErrorDBSave, "[I_add_user_policy]::db.Create()", _log_hash)
+		return nil, res.Error
+	}
+
+	return policy, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// I_del_user_policy deletes a user policy entry.
+func I_del_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID))))
+
+	// Initialize database
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_del_user_policy]::db_operations.InitDB()", _log_hash)
+		return nil, e
+	}
+
+	// Try to find the policy entry
+	var policy models.Policy
+	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_del_user_policy]::db.First()", _log_hash)
+		return nil, res.Error
+	}
+
+	// Delete the policy entry from the database
+	res = db.Delete(&policy)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBDelete, LogService.TErrorDBDelete, "[I_del_user_policy]::db.Delete()", _log_hash)
+		return nil, res.Error
+	}
+
+	return &policy, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// I_get_policy_all gets all user policy rules as JSON.
+func I_get_policy_all(UserID int32, AppID int32) (*map[string]bool, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID))))
+
+	// Decode existing policy entry from database
+	json_o, err := I_dec_policy(UserID, AppID)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorIDecPolicy, LogService.TErrorIDecPolicy, "[I_get_policy_all]::I_dec_policy()", _log_hash)
+		return nil, err
+	}
+	if json_o == nil {
+		return nil, nil
+	}
+
+	return json_o, nil
+}
+
+// TODO update change time
+// * FINAL - STATIC API - L3 INTERNAL API
+// I_set_policy_all overrides only given policy rules.
+func I_set_policy_all(UserID int32, AppID int32, json_str string) (*models.Policy, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID) + json_str)))
+
+	// Decode JSON string to map
+	var json_o map[string]bool
+	err := json.Unmarshal([]byte(json_str), &json_o)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorJSONUnmarshal, LogService.TErrorJSONUnmarshal, "[I_set_policy_all]::json.Unmarshal()", _log_hash)
+		return nil, err
+	}
+
+	// Save changed policy entry into database
+	policy, err := I_enc_policy(UserID, AppID, json_o)
+	if err != nil {
+		LogService.Push_server_log(LogService.ErrorIEncPolicy, LogService.TErrorIEncPolicy, "[I_set_policy_all]::I_enc_policy()", _log_hash)
+		return nil, err
+	}
+	if policy == nil {
+		return nil, nil
+	}
+
+	return policy, nil
+}
+
+// * FINAL - STATIC API - L3 INTERNAL API
+// Implement I_get_policy_time_changed
+func I_get_policy_time_changed(UserID int32, AppID int32) (time.Time, error) {
+	_log_hash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(UserID) + fmt.Sprint(AppID))))
+
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[I_get_policy_time_changed]::db_operations.InitDB()", _log_hash)
+		return time.Time{}, e
+	}
+
+	var policy models.Policy
+	res := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[I_get_policy_time_changed]::db.First()", _log_hash)
+		return time.Time{}, res.Error
+	}
+
+	return policy.DateChanged.Time, nil
+}
+
+// I_get_policy_time_created
