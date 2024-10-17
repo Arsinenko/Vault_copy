@@ -73,7 +73,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RunServer() {
-	http.HandleFunc("/auth", AuthHandler)
-	http.HandleFunc("/register", RegisterHandler)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/api/user/auth", AuthHandler)
+	http.HandleFunc("/api/user/register", RegisterHandler)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return
+	}
 }
