@@ -14,6 +14,8 @@ const (
 	EventRegister
 	EventTryRegister
 
+	EventDeleteUser
+
 	EventTryRegisterAlreadyExists
 
 	EventTryRegisterBadPassword
