@@ -33,24 +33,24 @@ func I_policy_exists(db *gorm.DB, UserID int32) bool {
 
 // I_dec_policy decodes user rules from the database into a map.
 func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_dec_policy]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_dec_policy]::db_operations.InitDB()", logHash)
 		return nil, err
 	}
 
 	var policy models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
-		logError(LogService.ErrorDBExec, "[I_dec_policy]::db.First()", _log_hash)
+		logError(LogService.ErrorDBExec, "[I_dec_policy]::db.First()", logHash)
 		return nil, err
 	}
 
 	// Decode JSON rules
 	var jsonRules map[string]bool
 	if err := json.Unmarshal(policy.Rules.Bytes, &jsonRules); err != nil {
-		logError(LogService.ErrorJSONUnmarshal, "[I_dec_policy]::json.Unmarshal()", _log_hash)
+		logError(LogService.ErrorJSONUnmarshal, "[I_dec_policy]::json.Unmarshal()", logHash)
 		return nil, err
 	}
 
@@ -59,11 +59,11 @@ func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
 
 // I_enc_policy encodes and stores user rules in the database.
 func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models.Policy, error) {
-	_log_hash := generateLogHash(UserID, AppID, jsonRules)
+	logHash := generateLogHash(UserID, AppID, jsonRules)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_enc_policy]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_enc_policy]::db_operations.InitDB()", logHash)
 		return nil, err
 	}
 
@@ -73,14 +73,14 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 
 	var policy models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
-		logError(LogService.ErrorDBExec, "[I_enc_policy]::db.First()", _log_hash)
+		logError(LogService.ErrorDBExec, "[I_enc_policy]::db.First()", logHash)
 		return nil, err
 	}
 
 	// Encode JSON to bytes
 	rawStr, err := json.Marshal(jsonRules)
 	if err != nil {
-		logError(LogService.ErrorJSONMarshal, "[I_enc_policy]::json.Marshal()", _log_hash)
+		logError(LogService.ErrorJSONMarshal, "[I_enc_policy]::json.Marshal()", logHash)
 		return nil, err
 	}
 
@@ -89,7 +89,7 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 	policy.DateChanged.Time = time.Now()
 
 	if err := db.Save(&policy).Error; err != nil {
-		logError(LogService.ErrorDBSave, "[I_enc_policy]::db.Save()", _log_hash)
+		logError(LogService.ErrorDBSave, "[I_enc_policy]::db.Save()", logHash)
 		return nil, err
 	}
 
@@ -98,11 +98,11 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 
 // I_set_policy_rule sets a specific policy rule for a user.
 func I_set_policy_rule(UserID int32, AppID int32, Rule string, value bool) (*models.Policy, error) {
-	_log_hash := generateLogHash(UserID, AppID, Rule, value)
+	logHash := generateLogHash(UserID, AppID, Rule, value)
 
 	jsonRules, err := I_dec_policy(UserID, AppID)
 	if err != nil {
-		logError(LogService.ErrorIDecPolicy, "[I_set_policy_rule]::I_dec_policy()", _log_hash)
+		logError(LogService.ErrorIDecPolicy, "[I_set_policy_rule]::I_dec_policy()", logHash)
 		return nil, err
 	}
 	if jsonRules == nil {
@@ -118,11 +118,11 @@ func I_set_policy_rule(UserID int32, AppID int32, Rule string, value bool) (*mod
 
 // I_get_policy_rule retrieves the value of a specific policy rule.
 func I_get_policy_rule(UserID int32, AppID int32, Rule string) (bool, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	jsonRules, err := I_dec_policy(UserID, AppID)
 	if err != nil {
-		logError(LogService.ErrorIDecPolicy, "[I_get_policy_rule]::I_dec_policy()", _log_hash)
+		logError(LogService.ErrorIDecPolicy, "[I_get_policy_rule]::I_dec_policy()", logHash)
 		return false, err
 	}
 	if jsonRules == nil {
@@ -134,11 +134,11 @@ func I_get_policy_rule(UserID int32, AppID int32, Rule string) (bool, error) {
 
 // I_add_user_policy adds a new user policy entry with default values.
 func I_add_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_add_user_policy]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_add_user_policy]::db_operations.InitDB()", logHash)
 		return nil, err
 	}
 
@@ -149,7 +149,7 @@ func I_add_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
 	// Create a new policy with default values
 	rawStr, err := json.Marshal(defaultRules)
 	if err != nil {
-		logError(LogService.ErrorJSONMarshal, "[I_add_user_policy]::json.Marshal()", _log_hash)
+		logError(LogService.ErrorJSONMarshal, "[I_add_user_policy]::json.Marshal()", logHash)
 		return nil, err
 	}
 
@@ -162,7 +162,7 @@ func I_add_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
 	}
 
 	if err := db.Create(policy).Error; err != nil {
-		logError(LogService.ErrorDBSave, "[I_add_user_policy]::db.Create()", _log_hash)
+		logError(LogService.ErrorDBSave, "[I_add_user_policy]::db.Create()", logHash)
 		return nil, err
 	}
 
@@ -171,22 +171,22 @@ func I_add_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
 
 // I_del_user_policy deletes a user policy entry.
 func I_del_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_del_user_policy]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_del_user_policy]::db_operations.InitDB()", logHash)
 		return nil, err
 	}
 
 	var policy models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
-		logError(LogService.ErrorDBExec, "[I_del_user_policy]::db.First()", _log_hash)
+		logError(LogService.ErrorDBExec, "[I_del_user_policy]::db.First()", logHash)
 		return nil, err
 	}
 
 	if err := db.Delete(&policy).Error; err != nil {
-		logError(LogService.ErrorDBDelete, "[I_del_user_policy]::db.Delete()", _log_hash)
+		logError(LogService.ErrorDBDelete, "[I_del_user_policy]::db.Delete()", logHash)
 		return nil, err
 	}
 
@@ -195,11 +195,11 @@ func I_del_user_policy(UserID int32, AppID int32) (*models.Policy, error) {
 
 // I_get_policy_all retrieves all user policy rules as JSON.
 func I_get_policy_all(UserID int32, AppID int32) (*map[string]bool, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	jsonRules, err := I_dec_policy(UserID, AppID)
 	if err != nil {
-		logError(LogService.ErrorIDecPolicy, "[I_get_policy_all]::I_dec_policy()", _log_hash)
+		logError(LogService.ErrorIDecPolicy, "[I_get_policy_all]::I_dec_policy()", logHash)
 		return nil, err
 	}
 	return jsonRules, nil
@@ -207,11 +207,11 @@ func I_get_policy_all(UserID int32, AppID int32) (*map[string]bool, error) {
 
 // I_set_policy_all overrides the given policy rules.
 func I_set_policy_all(UserID int32, AppID int32, jsonStr string) (*models.Policy, error) {
-	_log_hash := generateLogHash(UserID, AppID, jsonStr)
+	logHash := generateLogHash(UserID, AppID, jsonStr)
 
 	var jsonRules map[string]bool
 	if err := json.Unmarshal([]byte(jsonStr), &jsonRules); err != nil {
-		logError(LogService.ErrorJSONUnmarshal, "[I_set_policy_all]::json.Unmarshal()", _log_hash)
+		logError(LogService.ErrorJSONUnmarshal, "[I_set_policy_all]::json.Unmarshal()", logHash)
 		return nil, err
 	}
 
@@ -220,17 +220,17 @@ func I_set_policy_all(UserID int32, AppID int32, jsonStr string) (*models.Policy
 
 // I_get_policy_time_changed retrieves the last changed time of a user policy.
 func I_get_policy_time_changed(UserID int32, AppID int32) (time.Time, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_get_policy_time_changed]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_get_policy_time_changed]::db_operations.InitDB()", logHash)
 		return time.Time{}, err
 	}
 
 	var policy models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
-		logError(LogService.ErrorDBExec, "[I_get_policy_time_changed]::db.First()", _log_hash)
+		logError(LogService.ErrorDBExec, "[I_get_policy_time_changed]::db.First()", logHash)
 		return time.Time{}, err
 	}
 
@@ -239,17 +239,17 @@ func I_get_policy_time_changed(UserID int32, AppID int32) (time.Time, error) {
 
 // I_get_policy_time_created retrieves the create timestamp of a user policy.
 func I_get_policy_time_created(UserID int32, AppID int32) (time.Time, error) {
-	_log_hash := generateLogHash(UserID, AppID)
+	logHash := generateLogHash(UserID, AppID)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
-		logError(LogService.ErrorDBInit, "[I_get_policy_time_created]::db_operations.InitDB()", _log_hash)
+		logError(LogService.ErrorDBInit, "[I_get_policy_time_created]::db_operations.InitDB()", logHash)
 		return time.Time{}, err
 	}
 
 	var policy models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
-		logError(LogService.ErrorDBExec, "[I_get_policy_time_created]::db.First()", _log_hash)
+		logError(LogService.ErrorDBExec, "[I_get_policy_time_created]::db.First()", logHash)
 		return time.Time{}, err
 	}
 
