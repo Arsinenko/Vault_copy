@@ -203,6 +203,31 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO test
+func DeleteSecretHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		ID    int64 `json:"id"`
+		AppID int32 `json:"app_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	status := serviceUser.DeleteSecret(req.ID, req.AppID)
+
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	response := Response{Message: "Secret deletion attempt", Status: status}
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
+
+}
+
 func RunServer() {
 	r := mux.NewRouter()
 	r.HandleFunc("/api/v1/user/auth", AuthHandler).Methods("POST")
