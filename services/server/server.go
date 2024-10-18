@@ -118,14 +118,13 @@ func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-  AppIDstr := vars["app_id"];
-	AppID, errr := strconv.Atoi(AppIDstr)
-	if errr != nil {
+	AppIDstr := vars["app_id"]
+	AppID, er := strconv.Atoi(AppIDstr)
+	if er != nil {
 		// Handle the error (e.g., invalid app_id)
 		http.Error(w, "Invalid app_id", http.StatusBadRequest)
 		return
 	}
-
 
 	status := serviceApp.API_AppChangeName(req.UserID, int32(AppID), req.Name)
 
@@ -162,9 +161,9 @@ func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	var secret struct {
-		SID      string       `json:"sid"`
-		Data     []byte       `json:"data"`
-		AppID    int32        `json:"app_id"`
+		SID   string `json:"sid"`
+		Data  []byte `json:"data"`
+		AppID int32  `json:"app_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&secret); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -189,7 +188,7 @@ func RunServer() {
 	r.HandleFunc("/api/v1/app/create", CreateAppHandler).Methods("POST")
 
 	// [GET] /api/v1/app/{app_id}/[date_update, date_create]]
-	r.HandleFunc("/api/v1/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/name -- return name of app
+	r.HandleFunc("/api/v1/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT")               // +++ [GET] /api/app/{app_id}/name -- return name of app
 	r.HandleFunc("/api/v1/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/description -- return name of app
 	r.HandleFunc("/api/v1/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
 
