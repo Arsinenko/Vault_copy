@@ -163,6 +163,33 @@ func Register(phoneMail string, password string, fullName string) int {
 	return http.StatusOK
 }
 
+func DeleteUser(UserID int32, AppID int32) int {
+	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(UserID) + string(AppID))))
+
+	db, e := db_operations.InitDB()
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[DeleteUser]::db_operations.InitDB()", logHash)
+		return http.StatusInternalServerError
+	}
+
+	var user models.User
+
+	res := db.First(&user, "ID = ?", UserID)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[DeleteUser]::db_operations.InitDB()", logHash)
+		return http.StatusInternalServerError
+	}
+
+	res = db.Delete(&user)
+	if res.Error != nil {
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[DeleteUser]::db_operations.InitDB()", logHash)
+		return http.StatusInternalServerError
+	}
+
+	LogService.PushAuditLog(LogService.EventDeleteUser, UserID, AppID, 0, logHash)
+	return http.StatusOK
+}
+
 func CreateSecret(Data []byte, AppID int32, Metadata string) int { // SID, ya hz ne pomny zachem eto)))))
 	logHash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(string(AppID)+Metadata), Data...)))) // TODO fix FMT
 	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, logHash)
