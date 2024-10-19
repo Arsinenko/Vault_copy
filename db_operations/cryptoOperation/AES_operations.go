@@ -9,7 +9,7 @@ import (
 	"io"
 )
 
-var secretKey = []byte("your-32-byte-secret-key-here!") // В реальном приложении этот ключ должен храниться безопасно и не должен быть в коде
+var secretKey = []byte("your-32-byte-secret-key-here!")
 
 // EncryptSecret шифрует секрет с использованием AES
 func EncryptSecret(plaintext []byte) (string, error) {

@@ -16,14 +16,3 @@ func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }
-
-// HashSecret хеширует секрет с использованием bcrypt
-func HashSecret(secret []byte) ([]byte, error) {
-	return bcrypt.GenerateFromPassword(secret, bcrypt.DefaultCost)
-}
-
-// CheckSecretHash сравнивает секрет с хешем
-func CheckSecretHash(secret, hash []byte) bool {
-	err := bcrypt.CompareHashAndPassword(hash, secret)
-	return err == nil
-}

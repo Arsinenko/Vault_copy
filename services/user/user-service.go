@@ -67,26 +67,28 @@ func AuthStandard(phoneMail string, password string) int {
 		return http.StatusNotFound
 	}
 
-	usrSalt1, errS1 := hex.DecodeString(user.Password[:32])
-	if errS1 != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt1)", logHash)
-		return http.StatusInternalServerError
-	}
-
-	usrHash, errH := hex.DecodeString(user.Password[32:96])
-	if errH != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_hash)", logHash)
-		return http.StatusInternalServerError
-	}
-
-	usrSalt2, errS2 := hex.DecodeString(user.Password[96:])
-	if errS2 != nil {
-		LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt2)", logHash)
-		return http.StatusInternalServerError
-	}
-
-	rnHash := passHash(password, usrSalt1, usrSalt2)
-	authOk := pass_cmpP(usrHash, rnHash) == 0
+	//usrSalt1, errS1 := hex.DecodeString(user.Password[:32])
+	//if errS1 != nil {
+	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt1)", logHash)
+	//	return http.StatusInternalServerError
+	//}
+	//
+	//usrHash, errH := hex.DecodeString(user.Password[32:96])
+	//if errH != nil {
+	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_hash)", logHash)
+	//	return http.StatusInternalServerError
+	//}
+	//
+	//usrSalt2, errS2 := hex.DecodeString(user.Password[96:])
+	//if errS2 != nil {
+	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt2)", logHash)
+	//	return http.StatusInternalServerError
+	//}
+	//
+	//rnHash := passHash(password, usrSalt1, usrSalt2)
+	//authOk := pass_cmpP(usrHash, rnHash) == 0
+	//TODO - check security
+	authOk := cryptoOperation.CheckPasswordHash(password, user.Password)
 
 	if authOk {
 		LogService.PushAuditLog(LogService.EventAuth, user.ID, 0, 0, logHash)
@@ -135,17 +137,24 @@ func Register(phoneMail string, password string, fullName string) int {
 
 	isMail := strings.IndexByte(phoneMail, '@') != -1
 
-	var salt1 = cryptoOperation.SALT(16)
-	var salt2 = cryptoOperation.SALT(16)
-	var hash = passHash(password, salt1, salt2)
+	//var salt1 = cryptoOperation.SALT(16)
+	//var salt2 = cryptoOperation.SALT(16)
+	//var hash = passHash(password, salt1, salt2)
+	//
+	//var s = salt1[:]
+	//s = append(s, hash[:]...)
+	//s = append(s, salt2[:]...)
 
-	var s = salt1[:]
-	s = append(s, hash[:]...)
-	s = append(s, salt2[:]...)
+	hashedPass, err := cryptoOperation.HashPassword(password)
+
+	if err != nil {
+		//LogService.Push_server_log(LogService.ErrorHashPassword, LogService.TErrorHashPassword, "[Register]::cryptoOperation.HashPassword()", logHash)
+		return http.StatusInternalServerError
+	}
 
 	var user models.User
 	user.CreationDate = time.Now()
-	user.Password = hex.EncodeToString(s)
+	user.Password = hashedPass
 	user.FullName = fullName
 	user.Metadata = "{}"
 	user.TwoFactorKey = "nil"
