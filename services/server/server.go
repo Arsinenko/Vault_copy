@@ -15,7 +15,7 @@ import (
 type Response struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
-	Data any     `json:"data"`
+	Data    any    `json:"data"`
 }
 
 type AuthRequest struct {
@@ -207,7 +207,7 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 
 func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		UserID int32  `json:"user_id"` // TODO <- remove, get from auth token
+		UserID int32 `json:"user_id"` // TODO <- remove, get from auth token
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -234,20 +234,28 @@ func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//func GetSecretHandler(w http.ResponseWriter, r *http.Request) {
-//	vars := mux.Vars(r)
-//
-//	secrets, status := serviceUser.getSecrets(SID)
-//
-//	w.WriteHeader(status)
-//	w.Header().Set("Content-Type", "application/json")
-//	response := Response{Message: "Secret get attempt", Status: status}
-//	err := json.NewEncoder(w).Encode(response)
-//	if err != nil {
-//		return
-//	}
-//
-//}
+func GetSecretsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var req struct {
+		ID    int64 `json:"id"`
+		AppID int32 `json:"app_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	secrets, status := serviceSecret.GetSecrets(req.AppID)
+
+	w.WriteHeader(status)
+	w.Header().Set("Content-Type", "application/json")
+	response := Response{Message: "Secrets get attempt", Status: status, Data: secrets}
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
+}
 
 // TODO test
 func DeleteSecretHandler(w http.ResponseWriter, r *http.Request) {
