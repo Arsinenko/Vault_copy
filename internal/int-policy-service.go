@@ -35,7 +35,12 @@ func I_policy_agreement(UserID int32, AppID int32) (bool, error) {
 	//}
 	//return policy != nil, nil
 	// Check if a user policy exists
-	if !I_policy_exists(db_operations.InitDB(), UserID) {
+	db, _e := db_operations.InitDB()
+	if _e != nil {
+		return false, _e
+	}
+
+	if !I_policy_exists(db, UserID) {
 		return false, nil
 	}
 
