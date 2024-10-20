@@ -8,7 +8,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -48,17 +47,14 @@ func get_usr(phoneMail string) (*models.User, error) {
 	isMail := strings.IndexByte(phoneMail, '@') != -1
 	optMailPhone := map[bool]string{true: "email", false: "phone_number"}
 
-	var user *models.User
+	var user models.User
 	res := db.First(&user, optMailPhone[isMail]+"= ?", phoneMail)
 	if res.Error != nil {
 		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[get_usr]::db_operations.InitDB()", logHash)
 		return nil, res.Error
 	}
-	if user == nil {
-		return nil, nil
-	}
 
-	return user, nil
+	return &user, nil
 }
 
 // TODO: security checks
@@ -81,7 +77,7 @@ func AuthStandard(phoneMail string, password string) (int, string) {
 		// Создаем токен аутентификации
 		token, err := MakeAuthToken(user.ID)
 		if err != nil {
-			LogService.Push_server_log(LogService.ErrorCreateToken, strconv.Itoa(int(LogService.TErrorCreateToken)), "[AuthStandard]::MakeAuthToken()", logHash)
+			LogService.Push_server_log(LogService.ErrorCreateToken, LogService.TErrorCreateToken, "[AuthStandard]::MakeAuthToken()", logHash)
 			return http.StatusInternalServerError, ""
 		}
 
@@ -104,7 +100,7 @@ func AuthWithToken(token string) (int32, error) {
 	}
 
 	// Проверяем, не истек ли токен (например, через 24 часа)
-	if time.Now().Sub(sessionToken.Date) > 24*time.Hour {
+	if time.Now().Sub(sessionToken.CreationDate) > 24*time.Hour {
 		db.Delete(&sessionToken)
 		return 0, errors.New("token expired")
 	}
@@ -231,7 +227,7 @@ func MakeAuthToken(userID int32) (string, error) {
 	sessionToken := models.SessionToken{
 		UserID: int64(userID),
 		Hash:   token,
-		Date:   time.Now(),
+		CreationDate:   time.Now(), //pgtype.Timestamptz{Time: time.Now()},
 	}
 
 	if err := db.Create(&sessionToken).Error; err != nil {

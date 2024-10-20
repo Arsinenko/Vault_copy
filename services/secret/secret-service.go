@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func CreateSecret(Data []byte, AppID int32, Metadata string) int { // SID, ya hz ne pomny zachem eto)))))
+func CreateSecret(Data []byte, AppID int32, Metadata string) int {
 	logHash := hex.EncodeToString(cryptoOperation.SHA256(append([]byte(string(AppID)+Metadata), Data...))) // TODO fix FMT
 	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, logHash)
 
@@ -23,7 +23,7 @@ func CreateSecret(Data []byte, AppID int32, Metadata string) int { // SID, ya hz
 
 	encryptedSecret, err := cryptoOperation.EncryptSecret(Data)
 	if err != nil {
-		// Обработка ошибки
+		LogService.Push_server_log(LogService.ErrorEnc, LogService.TErrorEnc, "[CreateSecret]::cryptoOperation.EncryptSecret()", logHash)
 		return http.StatusInternalServerError
 	}
 

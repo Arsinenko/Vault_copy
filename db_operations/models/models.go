@@ -112,10 +112,9 @@ func (ServerLog) TableName() string {
 }
 
 type SessionToken struct {
-	UserID   int64        `db:"userid"`
+	UserID   int64        `db:"user_id"`
 	Hash     string       `db:"hash"`
-	Date     time.Time    `db:"creation_date"`
-	Metadata pgtype.JSONB `db:"metadata"`
+	CreationDate     time.Time    `db:"creation_date"`
 }
 
 func (SessionToken) TableName() string {

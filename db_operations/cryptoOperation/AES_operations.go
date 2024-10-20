@@ -5,11 +5,12 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"io"
 )
 
-var secretKey = []byte("your-32-byte-secret-key-here!")
+var secretKey, _ = hex.DecodeString("e32b96b4b124feda072f92df0d733e7f058abde738afe6783c87d8f6696980b0")
 
 // EncryptSecret шифрует секрет с использованием AES
 func EncryptSecret(plaintext []byte) (string, error) {

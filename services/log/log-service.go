@@ -33,7 +33,8 @@ const (
 	ErrorJSONMarshal
 
 	ErrorCreateToken
-	TErrorCreateToken
+
+	ErrorEnc
 )
 
 const TErrorHexDecode = "Error decode from hex"
@@ -57,6 +58,10 @@ const TErrorIDecPolicy = "Failed to decode policy"
 
 const TErrorJSONUnmarshal = "Failed to unmarshal json"
 const TErrorJSONMarshal = "Failed to marshal json"
+
+const TErrorCreateToken = "Failed to create token"
+
+const TErrorEnc = "Failed to encrypt data"
 
 // audit_log
 func Push_server_log(type_l int16, msg string, stack string, hash string) {

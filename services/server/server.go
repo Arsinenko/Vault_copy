@@ -43,6 +43,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := Response{
 		Status: status,
+		Data: token,
 	}
 
 	if status == http.StatusOK {
@@ -98,51 +99,65 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var req struct {
-		UserID int32 `json:"user_id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+
+	token, err := r.Cookie("token")
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := serviceUser.DeleteUser(req.UserID, 0)
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := serviceUser.DeleteUser(uid, 0)
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "User deletion attempt", Status: status}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	_err := json.NewEncoder(w).Encode(response)
+	if _err != nil {
 		return
 	}
-
 }
 
 func CreateAppHandler(w http.ResponseWriter, r *http.Request) {
 	var app struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`
-		OwnerID     int32  `json:"owner_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&app); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := serviceApp.CreateApp(app.Name, app.Description, app.OwnerID, pgtype.JSONB{})
+	token, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := serviceApp.CreateApp(app.Name, app.Description, uid, pgtype.JSONB{})
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App creation attempt", Status: status}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
 
 func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		UserID int32  `json:"user_id"` // TODO <- remove, get from auth token
 		Name   string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -154,26 +169,35 @@ func ChangeAppNameHandler(w http.ResponseWriter, r *http.Request) {
 	AppIDstr := vars["app_id"]
 	AppID, er := strconv.Atoi(AppIDstr)
 	if er != nil {
-		// Handle the error (e.g., invalid app_id)
-		http.Error(w, "Invalid app_id", http.StatusBadRequest)
+		http.Error(w, er.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := serviceApp.API_AppChangeName(req.UserID, int32(AppID), req.Name)
+	token, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := serviceApp.API_AppChangeName(uid, int32(AppID), req.Name)
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App name change attempt", Status: status}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
 
 func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		UserID      int32  `json:"user_id"`
-		AppID       int32  `json:"app_id"`
 		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -181,13 +205,33 @@ func ChangeAppDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := serviceApp.API_AppChangeDescription(req.UserID, req.AppID, req.Description)
+	vars := mux.Vars(r)
+	AppIDstr := vars["app_id"]
+	AppID, er := strconv.Atoi(AppIDstr)
+	if er != nil {
+		http.Error(w, er.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := serviceApp.API_AppChangeDescription(uid, int32(AppID), req.Description)
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App description change attempt", Status: status}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
@@ -196,30 +240,57 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	var secret struct {
 		SID   string `json:"sid"`
 		Data  []byte `json:"data"`
-		AppID int32  `json:"app_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&secret); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	status := serviceSecret.CreateSecret(secret.Data, secret.AppID, "{}")
+	vars := mux.Vars(r)
+	AppIDstr := vars["app_id"]
+	AppID, er := strconv.Atoi(AppIDstr)
+	if er != nil {
+		http.Error(w, er.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	uid, auth_err := serviceUser.AuthWithToken(token.Value)
+	if auth_err != nil {
+		http.Error(w, auth_err.Error(), http.StatusUnauthorized)
+		return
+	}
+	if uid < 0 {
+		http.Error(w, auth_err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	status := serviceSecret.CreateSecret(secret.Data, int32(AppID), "{}")
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "Secret creation attempt", Status: status}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
 
 func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		UserID int32 `json:"user_id"` // TODO <- remove, get from auth token
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	token, err := r.Cookie("token")
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -232,13 +303,13 @@ func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res_name, res_status := serviceApp.API_AppGetName(req.UserID, int32(AppID))
+	res_name, res_status := serviceApp.API_AppGetName(uid, int32(AppID))
 
 	w.WriteHeader(res_status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "App get name attempt", Status: res_status, Data: res_name}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
@@ -246,22 +317,38 @@ func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
 func GetSecretsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var req struct {
-		ID    int64 `json:"id"`
-		AppID int32 `json:"app_id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	token, token_err := r.Cookie("token")
+	if token_err != nil {
+		http.Error(w, token_err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	secrets, status := serviceSecret.GetSecrets(req.AppID)
+	uid, err := serviceUser.AuthWithToken(token.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if uid < 0 {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	vars := mux.Vars(r)
+	AppIDstr := vars["app_id"]
+	AppID, er := strconv.Atoi(AppIDstr)
+	if er != nil {
+		http.Error(w, er.Error(), http.StatusBadRequest)
+		return
+	}
+
+	secrets, status := serviceSecret.GetSecrets(int32(AppID))
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
 	response := Response{Message: "Secrets get attempt", Status: status, Data: secrets}
-	err := json.NewEncoder(w).Encode(response)
-	if err != nil {
+	err_ := json.NewEncoder(w).Encode(response)
+	if err_ != nil {
 		return
 	}
 }
@@ -303,6 +390,7 @@ func RunServer() {
 	r.HandleFunc("/api/v1/app/{app_id}/name", HTTP_app_get_name).Methods("GET")
 	r.HandleFunc("/api/v1/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/description -- return name of app
 	r.HandleFunc("/api/v1/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
+	r.HandleFunc("/api/v1/app/{app_id}/secrets", GetSecretsHandler).Methods("GET")
 
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
