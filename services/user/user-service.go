@@ -45,13 +45,17 @@ func get_usr(phoneMail string) (*models.User, error) {
 	isMail := strings.IndexByte(phoneMail, '@') != -1
 	optMailPhone := map[bool]string{true: "email", false: "phone_number"}
 
-	var user models.User
+	var user *models.User
 	res := db.First(&user, optMailPhone[isMail]+"= ?", phoneMail)
 	if res.Error != nil {
 		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[get_usr]::db_operations.InitDB()", logHash)
 		return nil, res.Error
 	}
-	return &user, nil
+	if user == nil {
+		return nil, nil;
+	}
+	
+	return user, nil
 }
 
 // TODO: security checks
