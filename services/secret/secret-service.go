@@ -66,9 +66,9 @@ func DeleteSecret(SecretID int64, AppID int32) int {
 	return http.StatusOK
 }
 
-func GetSecrets(UserID int32) ([]models.Secret, int) {
-	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(strconv.FormatInt(int64(UserID), 10))))
-	LogService.PushAuditLog(LogService.EventTryGetSecret, UserID, 0, 0, logHash)
+func GetSecrets(AppID int32) ([]models.Secret, int) {
+	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(strconv.FormatInt(int64(AppID), 10))))
+	LogService.PushAuditLog(LogService.EventTryGetSecret, 0, AppID, 0, logHash)
 
 	db, err := db_operations.InitDB()
 	if err != nil {
@@ -77,22 +77,24 @@ func GetSecrets(UserID int32) ([]models.Secret, int) {
 	}
 
 	var secrets []models.Secret
-	res := db.Where("app_id IN (SELECT app_id FROM policies WHERE user_id = ?)", UserID).Find(&secrets)
+	res := db.Where("app_id = ?", AppID).Find(&secrets)
 	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[GetSecrets]::db_operations.InitDB()", logHash)
+		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[GetSecrets]::db.Find(&secrets)", logHash)
 		return nil, http.StatusInternalServerError
 	}
+
 	var decryptedSecrets []models.Secret
 	for _, secret := range secrets {
 		decryptedData, err := cryptoOperation.DecryptSecret(string(secret.Data))
 		if err != nil {
 			// Логирование ошибки и пропуск этого секрета
+			LogService.Push_server_log(LogService.ErrorGeneral, "Failed to decrypt secret", "[GetSecrets]::cryptoOperation.DecryptSecret()", logHash)
 			continue
 		}
 		secret.Data = decryptedData
 		decryptedSecrets = append(decryptedSecrets, secret)
 	}
 
-	LogService.PushAuditLog(LogService.EventGetSecret, UserID, 0, 0, logHash)
-	return secrets, http.StatusOK
+	LogService.PushAuditLog(LogService.EventGetSecret, 0, AppID, 0, logHash)
+	return decryptedSecrets, http.StatusOK
 }
