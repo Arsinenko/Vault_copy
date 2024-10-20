@@ -32,6 +32,8 @@ const (
 	EventTryCreateSecret
 	EventTryDeleteSecret
 	EventDeleteSecret
+	EventTryGetSecret
+	EventGetSecret
 
 	EventChangeAppName
 	EventChangeAppNameTry
