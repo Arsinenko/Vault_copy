@@ -6,6 +6,7 @@ import (
 	serviceUser "Vault_copy/services/user"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -392,7 +393,7 @@ func RunServer() {
 	r.HandleFunc("/api/v1/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
 	r.HandleFunc("/api/v1/app/{app_id}/secrets", GetSecretsHandler).Methods("GET")
 
-	err := http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(":" + os.Getenv("APP_PORT"), r)
 	if err != nil {
 		return
 	}

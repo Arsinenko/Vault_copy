@@ -2,6 +2,7 @@ package db_operations
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -14,13 +15,13 @@ var db_init = false
 func InitDB() (*gorm.DB, error) {
 	if db_init { return db_active, nil; }
 
-	username := "vault"
-	password := "test12344444"
-	dbName := "vault"
-	host := "localhost"
-	port := 5432
+	username := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
 
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, username, password, dbName)
 
 	db, err := gorm.Open("postgres", connStr)
