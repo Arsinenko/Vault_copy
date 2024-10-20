@@ -41,10 +41,13 @@ func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
 		return nil, err
 	}
 
-	var policy models.Policy
+	var policy *models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
 		logError(LogService.ErrorDBExec, "[I_dec_policy]::db.First()", logHash)
-		return nil, err
+		return nil, err;
+	}
+	if policy == nil {
+		return nil, nil;
 	}
 
 	// Decode JSON rules
@@ -71,10 +74,13 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 		return nil, fmt.Errorf("user does not exist")
 	}
 
-	var policy models.Policy
+	var policy *models.Policy
 	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
 		logError(LogService.ErrorDBExec, "[I_enc_policy]::db.First()", logHash)
 		return nil, err
+	}
+	if policy == nil {
+		return nil, nil;
 	}
 
 	// Encode JSON to bytes
@@ -93,7 +99,7 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 		return nil, err
 	}
 
-	return &policy, nil
+	return policy, nil
 }
 
 // I_set_policy_rule sets a specific policy rule for a user.
