@@ -16,15 +16,51 @@ import (
 )
 
 const (
-	I_rule_view_app_info = "view_app_info"
+	I_rule_view_app_info   = "view_app_info"
 	I_rule_change_app_name = "change_app_name"
 	I_rule_change_app_desc = "change_app_desc"
 )
 
 var defaultRules = map[string]bool{
-	I_rule_view_app_info: true,
+	I_rule_view_app_info:   true,
 	I_rule_change_app_name: false,
 	I_rule_change_app_desc: false,
+}
+
+func I_policy_agreement(UserID int32, AppID int32) (bool, error) {
+	//add a record app with default rules
+	//policy, err := I_add_user_policy(UserID, AppID)
+	//if err != nil {
+	//	return false, err
+	//}
+	//return policy != nil, nil
+	// Check if a user policy exists
+	if !I_policy_exists(db_operations.InitDB(), UserID) {
+		return false, nil
+	}
+
+	// Check if the user has accepted the app rules
+	jsonRules, err := I_dec_policy(UserID, AppID)
+	if err != nil {
+		return false, err
+	}
+	if jsonRules == nil {
+		return false, nil
+	}
+
+	// Check if all rules are accepted
+	for rule, accepted := range *jsonRules {
+		if !accepted {
+			return false, nil
+		}
+
+		// If the rule doesn't exist in the default rules, it's an error
+		if _, ok := defaultRules[rule]; !ok {
+			return false, fmt.Errorf("unknown rule %s", rule)
+		}
+	}
+
+	return true, nil
 }
 
 // I_policy_exists checks if a user policy exists in the database.
@@ -46,10 +82,10 @@ func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
 	var policy models.Policy
 	if err := db.First(policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
 		logError(LogService.ErrorDBExec, "[I_dec_policy]::db.First()", logHash)
-		return nil, err;
+		return nil, err
 	}
 	if policy.AppID < 0 {
-		return nil, nil;
+		return nil, nil
 	}
 
 	// Decode JSON rules
@@ -82,7 +118,7 @@ func I_enc_policy(UserID int32, AppID int32, jsonRules map[string]bool) (*models
 		return nil, err
 	}
 	if policy == nil {
-		return nil, nil;
+		return nil, nil
 	}
 
 	// Encode JSON to bytes
