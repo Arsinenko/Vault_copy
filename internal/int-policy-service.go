@@ -43,12 +43,12 @@ func I_dec_policy(UserID int32, AppID int32) (*map[string]bool, error) {
 		return nil, err
 	}
 
-	var policy *models.Policy
-	if err := db.First(&policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
+	var policy models.Policy
+	if err := db.First(policy, "user_id = ? AND app_id = ?", UserID, AppID).Error; err != nil {
 		logError(LogService.ErrorDBExec, "[I_dec_policy]::db.First()", logHash)
 		return nil, err;
 	}
-	if policy == nil {
+	if policy.AppID < 0 {
 		return nil, nil;
 	}
 

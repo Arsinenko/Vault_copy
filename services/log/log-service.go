@@ -62,10 +62,11 @@ func Push_server_log(type_l int16, msg string, stack string, hash string) {
 		panic(err)
 	}
 
-	var auditLog models.ServerLog
-	auditLog.MSG = msg
-	auditLog.Type = type_l
-	auditLog.Stack = stack
-	auditLog.Date = time.Now()
-	db.Create(&auditLog) // TODO handle errors
+	var log_e models.ServerLog
+	log_e.MSG = msg
+	log_e.Type = type_l
+	log_e.Stack = stack
+	log_e.Date = time.Now()
+	// TODO add hash
+	db.Create(&log_e) // TODO handle errors
 }
