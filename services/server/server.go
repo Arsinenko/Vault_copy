@@ -39,7 +39,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := serviceUser.AuthStandard(authReq.PhoneMail, authReq.Password)
+	status, token := serviceUser.AuthStandard(authReq.PhoneMail, authReq.Password)
 
 	response := Response{
 		Status: status,
@@ -47,6 +47,15 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) {
 
 	if status == http.StatusOK {
 		response.Message = "Authentication successful"
+
+		// Устанавливаем cookie с токеном
+		http.SetCookie(w, &http.Cookie{
+			Name:     "token",
+			Value:    token,
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteStrictMode,
+		})
 	} else {
 		response.Message = "Authentication failed"
 	}
