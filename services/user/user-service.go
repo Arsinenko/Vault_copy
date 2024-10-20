@@ -4,7 +4,9 @@ import (
 	"Vault_copy/db_operations"
 	"Vault_copy/db_operations/cryptoOperation"
 	"Vault_copy/db_operations/models"
+	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -52,54 +54,61 @@ func get_usr(phoneMail string) (*models.User, error) {
 		return nil, res.Error
 	}
 	if user == nil {
-		return nil, nil;
+		return nil, nil
 	}
-	
+
 	return user, nil
 }
 
 // TODO: security checks
 // MVP READY, STATIC API, FINAL (REST)
-func AuthStandard(phoneMail string, password string) int {
+func AuthStandard(phoneMail string, password string) (int, string) {
 	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(phoneMail + password)))
 	LogService.PushAuditLog(LogService.EventTryAuth, 0, 0, 0, logHash)
 
 	user, err := get_usr(phoneMail)
 	if err != nil {
 		LogService.Push_server_log(LogService.ErrorGetUsr, LogService.TErrorGetUsr, "[CreateSecret]::get_usr(phone_mail)", logHash)
-		return http.StatusNotFound
+		return http.StatusNotFound, ""
 	}
 
-	//usrSalt1, errS1 := hex.DecodeString(user.Password[:32])
-	//if errS1 != nil {
-	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt1)", logHash)
-	//	return http.StatusInternalServerError
-	//}
-	//
-	//usrHash, errH := hex.DecodeString(user.Password[32:96])
-	//if errH != nil {
-	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_hash)", logHash)
-	//	return http.StatusInternalServerError
-	//}
-	//
-	//usrSalt2, errS2 := hex.DecodeString(user.Password[96:])
-	//if errS2 != nil {
-	//	LogService.Push_server_log(LogService.ErrorHexDecode, LogService.TErrorHexDecode, "[AuthStandard]::hex:decode(usr_salt2)", logHash)
-	//	return http.StatusInternalServerError
-	//}
-	//
-	//rnHash := passHash(password, usrSalt1, usrSalt2)
-	//authOk := pass_cmpP(usrHash, rnHash) == 0
-	//TODO - check security
 	authOk := cryptoOperation.CheckPasswordHash(password, user.Password)
 
 	if authOk {
 		LogService.PushAuditLog(LogService.EventAuth, user.ID, 0, 0, logHash)
-		return http.StatusOK
+
+		// Создаем токен аутентификации
+		token, err := MakeAuthToken(user.ID)
+		if err != nil {
+			LogService.Push_server_log(LogService.ErrorCreateToken, LogService.TErrorCreateToken, "[AuthStandard]::MakeAuthToken()", logHash)
+			return http.StatusInternalServerError, ""
+		}
+
+		return http.StatusOK, token
 	} else {
 		LogService.PushAuditLog(LogService.EventUnauthorized, user.ID, 0, 0, logHash)
-		return http.StatusUnauthorized
+		return http.StatusUnauthorized, ""
 	}
+}
+
+func AuthWithToken(token string) (int32, error) {
+	db, err := db_operations.InitDB()
+	if err != nil {
+		return 0, err
+	}
+
+	var sessionToken models.SessionToken
+	if err := db.Where("hash = ?", token).First(&sessionToken).Error; err != nil {
+		return 0, err
+	}
+
+	// Проверяем, не истек ли токен (например, через 24 часа)
+	if time.Now().Sub(sessionToken.Date) > 24*time.Hour {
+		db.Delete(&sessionToken)
+		return 0, errors.New("token expired")
+	}
+
+	return int32(sessionToken.UserID), nil
 }
 
 // TODO: security checks, check password and phone/mail legit by content.
@@ -203,6 +212,30 @@ func DeleteUser(UserID int32, AppID int32) int {
 	return http.StatusOK
 }
 
-func MakeToken(userID int32) {
+func MakeAuthToken(userID int32) (string, error) {
+	// Генерируем случайный токен
+	tokenBytes := make([]byte, 32)
+	_, err := rand.Read(tokenBytes)
+	if err != nil {
+		return "", err
+	}
+	token := hex.EncodeToString(tokenBytes)
 
+	// Создаем запись в базе данных
+	db, err := db_operations.InitDB()
+	if err != nil {
+		return "", err
+	}
+
+	sessionToken := models.SessionToken{
+		UserID: int64(userID),
+		Hash:   token,
+		Date:   time.Now(),
+	}
+
+	if err := db.Create(&sessionToken).Error; err != nil {
+		return "", err
+	}
+
+	return token, nil
 }

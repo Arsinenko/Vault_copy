@@ -31,6 +31,9 @@ const (
 
 	ErrorJSONUnmarshal
 	ErrorJSONMarshal
+
+	ErrorCreateToken
+	TErrorCreateToken
 )
 
 const TErrorHexDecode = "Error decode from hex"
