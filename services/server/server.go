@@ -2,6 +2,7 @@ package server
 
 import (
 	serviceApp "Vault_copy/services/app"
+	serviceSecret "Vault_copy/services/secret"
 	serviceUser "Vault_copy/services/user"
 	"encoding/json"
 	"net/http"
@@ -192,7 +193,7 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := serviceUser.CreateSecret(secret.Data, secret.AppID, "{}")
+	status := serviceSecret.CreateSecret(secret.Data, secret.AppID, "{}")
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
@@ -232,7 +233,7 @@ func DeleteSecretHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	status := serviceUser.DeleteSecret(req.ID, req.AppID)
+	status := serviceSecret.DeleteSecret(req.ID, req.AppID)
 
 	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json")
