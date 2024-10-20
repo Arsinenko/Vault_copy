@@ -1,0 +1,289 @@
+{
+	"info": {
+		"_postman_id": "94356bfa-1814-4d54-9487-33dc2366dd36",
+		"name": "VaultCopy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39083927"
+	},
+	"item": [
+		{
+			"name": "User - Auth",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"phone_mail\": \"test100@mail.com\",\r\n    \"password\": \"password\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/user/auth",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"auth"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User - Register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"phone_mail\": \"test100@mail.com\",\r\n    \"password\": \"password\",\r\n    \"full_name\": \"Test User\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/user/register",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "User - Delete",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "token=2d048616cebd1683cde2f6f5b603b3b36c4e19be85ae5b3184df7f94fdba3eda",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/user/delete",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"user",
+						"delete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "App - Create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"TestApp 5\",\r\n    \"dscription\": \"my app 5\",\r\n    \"owner_id\": 50\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/app/create",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"app",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "App - Set Name",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"UserID\": -1,\r\n    \"Name\": \"New Name\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/app/1/name",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"app",
+						"1",
+						"name"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "App - Get Name",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"UserID\": 50,\r\n    \"Name\": \"New Name\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/app/4/name",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"app",
+						"4",
+						"name"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Secret - Post",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"data\": \"NzM3NTcwNjU3MjIwNjU2ZTYzNzI3OTcwNzQ2NTY0MjA3NjYxNmM3NTY4\",\r\n    \"app_id\": 4\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/app/1/secret",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"app",
+						"1",
+						"secret"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Secret - Get",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": 5\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://46.17.41.16:8080/api/v1/app/4/secrets",
+					"protocol": "http",
+					"host": [
+						"46",
+						"17",
+						"41",
+						"16"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"app",
+						"4",
+						"secrets"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
