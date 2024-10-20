@@ -203,6 +203,22 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//func GetSecretHandler(w http.ResponseWriter, r *http.Request) {
+//	vars := mux.Vars(r)
+//	SID := vars["sid"] // TODO <- remove, get from auth token
+//
+//	secrets, status := serviceUser.getSecrets(SID)
+//
+//	w.WriteHeader(status)
+//	w.Header().Set("Content-Type", "application/json")
+//	response := Response{Message: "Secret get attempt", Status: status}
+//	err := json.NewEncoder(w).Encode(response)
+//	if err != nil {
+//		return
+//	}
+//
+//}
+
 // TODO test
 func DeleteSecretHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

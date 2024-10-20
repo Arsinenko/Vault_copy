@@ -6,7 +6,6 @@ import (
 	"Vault_copy/db_operations/models"
 	"encoding/hex"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -198,81 +197,6 @@ func DeleteUser(UserID int32, AppID int32) int {
 
 	LogService.PushAuditLog(LogService.EventDeleteUser, UserID, AppID, 0, logHash)
 	return http.StatusOK
-}
-
-func CreateSecret(Data []byte, AppID int32, Metadata string) int { // SID, ya hz ne pomny zachem eto)))))
-	logHash := hex.EncodeToString(append(cryptoOperation.SHA256(append([]byte(string(AppID)+Metadata), Data...)))) // TODO fix FMT
-	LogService.PushAuditLog(LogService.EventTryCreateSecret, 0, AppID, 0, logHash)
-
-	db, err := db_operations.InitDB()
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[CreateSecret]::db_operations.InitDB()", logHash)
-		return http.StatusInternalServerError
-	}
-
-	encryptedSecret, err := cryptoOperation.EncryptSecret(Data)
-	if err != nil {
-		// Обработка ошибки
-		return http.StatusInternalServerError
-	}
-
-	var secret models.Secret
-	secret.Data = []byte(encryptedSecret)
-	secret.AppID = AppID
-	secret.CreationDate = time.Now()
-	secret.Metadata = Metadata
-
-	db.Create(&secret) // TODO
-
-	LogService.PushAuditLog(LogService.EventCreateSecret, 0, secret.AppID, secret.ID, logHash)
-	return http.StatusOK
-}
-
-func DeleteSecret(SecretID int64, AppID int32) int {
-	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(strconv.FormatInt(SecretID, 10) + string(AppID))))
-	LogService.PushAuditLog(LogService.EventTryDeleteSecret, 0, AppID, SecretID, logHash)
-
-	db, err := db_operations.InitDB()
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[DeleteSecret]::db_operations.InitDB()", logHash)
-		return http.StatusInternalServerError
-	}
-
-	var secret models.Secret
-	res := db.First(&secret, "ID = ?", SecretID)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[DeleteSecret]::db_operations.InitDB()", logHash)
-		return http.StatusInternalServerError
-	}
-
-	res = db.Delete(&secret)
-	if res.Error != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[DeleteSecret]::db_operations.InitDB()", logHash)
-		return http.StatusInternalServerError
-	}
-
-	LogService.PushAuditLog(LogService.EventDeleteSecret, 0, AppID, SecretID, logHash)
-	return http.StatusOK
-}
-
-func getSecrets(AppID int32) ([]models.Secret, int) {
-	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(string(AppID))))
-	//LogService.PushAuditLog(LogService.EventTryGetSecrets, 0, AppID, 0, logHash)
-
-	db, err := db_operations.InitDB()
-	if err != nil {
-		LogService.Push_server_log(LogService.ErrorDBInit, LogService.TErrorDBInit, "[getSecrets]::db_operations.InitDB()", logHash)
-		return nil, http.StatusInternalServerError
-	}
-
-	var secrets []models.Secret
-	if err := db.Where("app_id = ?", AppID).Find(&secrets).Error; err != nil {
-		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[getSecrets]::db.Find(&secrets)", logHash)
-		return nil, http.StatusInternalServerError
-	}
-
-	//LogService.PushAuditLog(LogService.EventGetSecrets, 0, AppID, 0, logHash)
-	return secrets, http.StatusOK
 }
 
 func MakeToken(userID int32) {
