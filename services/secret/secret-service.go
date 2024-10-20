@@ -82,6 +82,16 @@ func GetSecrets(UserID int32) ([]models.Secret, int) {
 		LogService.Push_server_log(LogService.ErrorDBExec, LogService.TErrorDBExec, "[GetSecrets]::db_operations.InitDB()", logHash)
 		return nil, http.StatusInternalServerError
 	}
+	var decryptedSecrets []models.Secret
+	for _, secret := range secrets {
+		decryptedData, err := cryptoOperation.DecryptSecret(string(secret.Data))
+		if err != nil {
+			// Логирование ошибки и пропуск этого секрета
+			continue
+		}
+		secret.Data = decryptedData
+		decryptedSecrets = append(decryptedSecrets, secret)
+	}
 
 	LogService.PushAuditLog(LogService.EventGetSecret, UserID, 0, 0, logHash)
 	return secrets, http.StatusOK
