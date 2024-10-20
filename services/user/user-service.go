@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 	"unsafe"
@@ -80,7 +81,7 @@ func AuthStandard(phoneMail string, password string) (int, string) {
 		// Создаем токен аутентификации
 		token, err := MakeAuthToken(user.ID)
 		if err != nil {
-			LogService.Push_server_log(LogService.ErrorCreateToken, LogService.TErrorCreateToken, "[AuthStandard]::MakeAuthToken()", logHash)
+			LogService.Push_server_log(LogService.ErrorCreateToken, strconv.Itoa(int(LogService.TErrorCreateToken)), "[AuthStandard]::MakeAuthToken()", logHash)
 			return http.StatusInternalServerError, ""
 		}
 
