@@ -6,6 +6,7 @@ import (
 	"Vault_copy/db_operations/models"
 	LogService "Vault_copy/services/log"
 	"encoding/hex"
+	"fmt"
 )
 
 // * FINAL - STATIC API - 3 LAYER API
@@ -51,6 +52,22 @@ func I_set_app_name(ID int32, Name string) (*models.App, error) {
 	db.Save(app) // TODO Handle error
 
 	return app, nil
+}
+
+// * FINAL - STATIC API - 3 LAYER API
+func I_get_app_name(ID int32) (string, error) {
+	logHash := hex.EncodeToString(cryptoOperation.SHA256([]byte(fmt.Sprint(ID))))
+
+	app, e := I_get_app(ID)
+	if e != nil {
+		LogService.Push_server_log(LogService.ErrorIGetApp, LogService.TErrorIGetApp, "[I_app_name]::I_get_app(ID)", logHash)
+		return "", e
+	}
+	if app == nil {
+		return "", nil
+	}
+
+	return app.Name, nil
 }
 
 // * FINAL - STATIC API - 3 LAYER API

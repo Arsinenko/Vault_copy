@@ -16,11 +16,13 @@ import (
 )
 
 const (
+	I_rule_view_app_info = "view_app_info"
 	I_rule_change_app_name = "change_app_name"
 	I_rule_change_app_desc = "change_app_desc"
 )
 
 var defaultRules = map[string]bool{
+	I_rule_view_app_info: true,
 	I_rule_change_app_name: false,
 	I_rule_change_app_desc: false,
 }

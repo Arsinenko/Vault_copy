@@ -15,6 +15,7 @@ import (
 type Response struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
+	Data any     `json:"data"`
 }
 
 type AuthRequest struct {
@@ -204,9 +205,37 @@ func CreateSecretHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func HTTP_app_get_name(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		UserID int32  `json:"user_id"` // TODO <- remove, get from auth token
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	AppIDstr := vars["app_id"]
+	AppID, er := strconv.Atoi(AppIDstr)
+	if er != nil {
+		// Handle the error (e.g., invalid app_id)
+		http.Error(w, "Invalid app_id", http.StatusBadRequest)
+		return
+	}
+
+	res_name, res_status := serviceApp.API_AppGetName(req.UserID, int32(AppID))
+
+	w.WriteHeader(res_status)
+	w.Header().Set("Content-Type", "application/json")
+	response := Response{Message: "App get name attempt", Status: res_status, Data: res_name}
+	err := json.NewEncoder(w).Encode(response)
+	if err != nil {
+		return
+	}
+}
+
 //func GetSecretHandler(w http.ResponseWriter, r *http.Request) {
 //	vars := mux.Vars(r)
-//	SID := vars["sid"] // TODO <- remove, get from auth token
 //
 //	secrets, status := serviceUser.getSecrets(SID)
 //
@@ -253,7 +282,8 @@ func RunServer() {
 	r.HandleFunc("/api/v1/app/create", CreateAppHandler).Methods("POST")
 
 	// [GET] /api/v1/app/{app_id}/[date_update, date_create]]
-	r.HandleFunc("/api/v1/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT")               // +++ [GET] /api/app/{app_id}/name -- return name of app
+	r.HandleFunc("/api/v1/app/{app_id}/name", ChangeAppNameHandler).Methods("PUT")
+	r.HandleFunc("/api/v1/app/{app_id}/name", HTTP_app_get_name).Methods("GET")
 	r.HandleFunc("/api/v1/app/{app_id}/description", ChangeAppDescriptionHandler).Methods("PUT") // +++ [GET] /api/app/{app_id}/description -- return name of app
 	r.HandleFunc("/api/v1/app/{app_id}/secret", CreateSecretHandler).Methods("POST")
 
